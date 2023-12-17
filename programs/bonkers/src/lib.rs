@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::*;
-use anchor_spl::token::{mint_to, transfer_checked, MintTo, TransferChecked};
+use anchor_spl::token::{burn, mint_to, transfer_checked, Burn, MintTo, TransferChecked};
 use std::collections::HashSet;
 
 declare_id!("DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F");
@@ -144,7 +144,8 @@ pub mod bonkers {
      * Pass in Roll Indexes since last claim (do the calculations off chain) that earn levels
      * Can only be called by stake account otherwise someone could skip claims
      * Can no longer claim levels if game is on stage 2
-     * If they have claims, but their stake amount is less than current mint cost (sleighs built + multiplier), they have to wait and recover the account in stage 2
+     * If they have claims, but their stake amount is less than current mint cost (sleighs built + multiplier)
+     * they have to wait and recover the account in stage 2
      * Basically they're SOL for not confirming sooner
      * CHECK: How many levels you can claim per transaction due to compute limit
      */
@@ -451,7 +452,102 @@ pub mod bonkers {
         Ok(())
     }
 
-    pub fn repair(ctx: Context<Repair>) -> Result<()> {
+    /**
+     * Repair takes in the amount of points you want to repair any
+     * part and burns the amount of resources from the ATA for it
+     */
+    pub fn repair(
+        ctx: Context<Repair>,
+        repair_propulsion_hp: u8,
+        repair_landing_gear_hp: u8,
+        repair_navigation_hp: u8,
+        repair_presents_bag_hp: u8,
+    ) -> Result<()> {
+        let sleigh = &mut ctx.accounts.sleigh;
+
+        // Check the Sleigh is not broken
+        if sleigh.broken {
+            return err!(BonkersError::SleighBroken);
+        }
+
+        //Repair cost is hp*intervals*2
+        // check if repair amount is greater than damage
+        let propulsion_dmg = u8::MAX - sleigh.propulsion_hp;
+        let mut propulsion_repair = repair_propulsion_hp;
+        if propulsion_repair > propulsion_dmg {
+            propulsion_repair = propulsion_dmg;
+        }
+        let propulsion_repair_cost = propulsion_repair as u64 * sleigh.last_delivery_roll * 2;
+        burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.propulsion_mint.to_account_info(),
+                    from: ctx.accounts.sleigh_propulsion_parts_ata.to_account_info(),
+                    authority: ctx.accounts.sleigh_owner.to_account_info(),
+                },
+            ),
+            propulsion_repair_cost,
+        )?;
+        sleigh.propulsion_hp += propulsion_repair;
+
+        let landing_gear_dmg = u8::MAX - sleigh.landing_gear_hp;
+        let mut landing_gear_repair = repair_landing_gear_hp;
+        if landing_gear_repair > landing_gear_dmg {
+            landing_gear_repair = landing_gear_dmg;
+        }
+        let landing_gear_repair_cost = landing_gear_repair as u64 * sleigh.last_delivery_roll * 2;
+        burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.landing_gear_mint.to_account_info(),
+                    from: ctx.accounts.sleigh_landing_gear_parts_ata.to_account_info(),
+                    authority: ctx.accounts.sleigh_owner.to_account_info(),
+                },
+            ),
+            landing_gear_repair_cost,
+        )?;
+        sleigh.landing_gear_hp += landing_gear_repair;
+
+        let navigation_dmg = u8::MAX - sleigh.navigation_hp;
+        let mut navigation_repair = repair_navigation_hp;
+        if navigation_repair > navigation_dmg {
+            navigation_repair = navigation_dmg;
+        }
+        let navigation_repair_cost = navigation_repair as u64 * sleigh.last_delivery_roll * 2;
+        burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.navigation_mint.to_account_info(),
+                    from: ctx.accounts.sleigh_navigation_parts_ata.to_account_info(),
+                    authority: ctx.accounts.sleigh_owner.to_account_info(),
+                },
+            ),
+            navigation_repair_cost,
+        )?;
+        sleigh.navigation_hp += landing_gear_repair;
+
+        let presents_bag_dmg = u8::MAX - sleigh.presents_bag_hp;
+        let mut presents_bag_repair = repair_presents_bag_hp;
+        if presents_bag_repair > presents_bag_dmg {
+            presents_bag_repair = presents_bag_dmg;
+        }
+        let presents_bag_repair_cost = presents_bag_repair as u64 * sleigh.last_delivery_roll * 2;
+        burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.presents_bag_mint.to_account_info(),
+                    from: ctx.accounts.sleigh_presents_bag_parts_ata.to_account_info(),
+                    authority: ctx.accounts.sleigh_owner.to_account_info(),
+                },
+            ),
+            presents_bag_repair_cost,
+        )?;
+        sleigh.presents_bag_hp += presents_bag_repair;
+
         Ok(())
     }
 

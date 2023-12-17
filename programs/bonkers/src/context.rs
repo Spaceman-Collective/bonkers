@@ -246,7 +246,71 @@ pub struct Delivery<'info> {
 
 
 #[derive(Accounts)]
-pub struct Repair {}
+pub struct Repair<'info>{
+    #[account(
+        address = sleigh.owner
+    )]
+    pub sleigh_owner: Signer<'info>,
+    
+    #[account(
+        seeds=[
+            PREFIX_GAME_SETTINGS,
+            game_settings.game_id.to_be_bytes().as_ref(),
+        ],
+        bump, // Just need the bump here so we can use it in the fn for minting resources
+    )]
+    pub game_settings: Account<'info, GameSettings>,
+    #[account(
+        mut,
+        constraint = (sleigh.game_id == game_settings.game_id) 
+    )]
+    pub sleigh: Account<'info, Sleigh>,
+    
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_propulsion_parts_ata.mint == game_settings.propulsion_parts_mint
+    )]
+    pub sleigh_propulsion_parts_ata: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_landing_gear_parts_ata.mint == game_settings.landing_gear_parts_mint
+    )]
+    pub sleigh_landing_gear_parts_ata: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_navigation_parts_ata.mint == game_settings.navigation_parts_mint
+    )]
+    pub sleigh_navigation_parts_ata: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_presents_bag_parts_ata.mint == game_settings.presents_bag_parts_mint
+    )]
+    pub sleigh_presents_bag_parts_ata: Account<'info, TokenAccount>,
+
+    #[account(
+        address = game_settings.propulsion_parts_mint
+    )]
+    pub propulsion_mint: Account<'info, Mint>,
+    #[account(
+        address = game_settings.landing_gear_parts_mint
+    )]
+    pub landing_gear_mint: Account<'info, Mint>,
+    #[account(
+        address = game_settings.navigation_parts_mint
+    )]
+    pub navigation_mint: Account<'info, Mint>,
+    #[account(
+        address = game_settings.presents_bag_parts_mint
+    )]
+    pub presents_bag_mint: Account<'info, Mint>,
+
+    pub token_program: Program<'info, Token>,
+}
 
 #[derive(Accounts)]
 pub struct Retire {}
