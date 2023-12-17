@@ -30,14 +30,26 @@ pub struct InitBonkers<'info> {
     #[account(
         init,
         seeds=[
-            PREFIX_GAME_ROLLS,
+            PREFIX_GAME_ROLL_STG1,
             init.game_id.to_be_bytes().as_ref()
         ],
         payer=admin,
         space=8+GameRolls::get_max_size(),
         bump,
     )]
-    pub game_rolls: Account<'info, GameRolls>,
+    pub game_rolls_stg1: Account<'info, GameRolls>,
+
+    #[account(
+        init,
+        seeds=[
+            PREFIX_GAME_ROLL_STG2,
+            init.game_id.to_be_bytes().as_ref()
+        ],
+        payer=admin,
+        space=8+GameRolls::get_max_size(),
+        bump,
+    )]
+    pub game_rolls_stg2: Account<'info, GameRolls>,
 }
 
 #[derive(Accounts)]
@@ -51,6 +63,34 @@ pub struct Stage1Roll<'info> {
 
     #[account(
         mut,
+        seeds=[
+            PREFIX_GAME_ROLL_STG1,
+            game_settings.game_id.to_be_bytes().as_ref()
+        ],
+        bump,
+        realloc = game_rolls.to_account_info().data_len() + 8,
+        realloc::payer = payer,
+        realloc::zero = false
+    )]
+    pub game_rolls: Account<'info, GameRolls>,
+}
+
+#[derive(Accounts)]
+pub struct Stage2Roll<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub system_program: Program<'info, System>,
+
+    #[account(mut)]
+    pub game_settings: Account<'info, GameSettings>,
+
+    #[account(
+        mut,
+        seeds=[
+            PREFIX_GAME_ROLL_STG2,
+            game_settings.game_id.to_be_bytes().as_ref()
+        ],
+        bump,
         realloc = game_rolls.to_account_info().data_len() + 8,
         realloc::payer = payer,
         realloc::zero = false
@@ -69,7 +109,7 @@ pub struct CreateSleigh<'info> {
     pub game_settings: Account<'info, GameSettings>,
     #[account(
         seeds=[
-            PREFIX_GAME_ROLLS,
+            PREFIX_GAME_ROLL_STG1,
             game_settings.game_id.to_be_bytes().as_ref(),
         ],
         bump,
@@ -115,7 +155,7 @@ pub struct ClaimLevels<'info> {
     pub game_settings: Account<'info, GameSettings>,
     #[account(
         seeds=[
-            PREFIX_GAME_ROLLS,
+            PREFIX_GAME_ROLL_STG1,
             game_settings.game_id.to_be_bytes().as_ref(),
         ],
         bump,
@@ -128,3 +168,88 @@ pub struct ClaimLevels<'info> {
     )]
     pub sleigh: Account<'info, Sleigh>,
 }
+
+#[derive(Accounts)]
+pub struct Delivery<'info> {
+    #[account(
+        mut,
+        seeds=[
+            PREFIX_GAME_SETTINGS,
+            game_settings.game_id.to_be_bytes().as_ref(),
+        ],
+        bump, // Just need the bump here so we can use it in the fn for minting resources
+    )]
+    pub game_settings: Account<'info, GameSettings>,
+    #[account(
+        seeds=[
+            PREFIX_GAME_ROLL_STG2,
+            game_settings.game_id.to_be_bytes().as_ref(),
+        ],
+        bump,
+    )]
+    pub game_rolls: Account<'info, GameRolls>,
+
+    #[account(
+        mut,
+        constraint = (sleigh.game_id == game_settings.game_id) 
+    )]
+    pub sleigh: Account<'info, Sleigh>,
+    
+    //Resources
+    // Requires mint authority of the resource(s) (can be Game Settings)
+    // Requires ATA of the sleigh_owner for each resource (check owner, and mint)
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_propulsion_parts_ata.mint == game_settings.propulsion_parts_mint
+    )]
+    pub sleigh_propulsion_parts_ata: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_landing_gear_parts_ata.mint == game_settings.landing_gear_parts_mint
+    )]
+    pub sleigh_landing_gear_parts_ata: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_navigation_parts_ata.mint == game_settings.navigation_parts_mint
+    )]
+    pub sleigh_navigation_parts_ata: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        owner = sleigh.owner,
+        constraint = sleigh_presents_bag_parts_ata.mint == game_settings.presents_bag_parts_mint
+    )]
+    pub sleigh_presents_bag_parts_ata: Account<'info, TokenAccount>,
+
+    #[account(
+        address = game_settings.propulsion_parts_mint
+    )]
+    pub propulsion_mint: Account<'info, Mint>,
+    #[account(
+        address = game_settings.landing_gear_parts_mint
+    )]
+    pub landing_gear_mint: Account<'info, Mint>,
+    #[account(
+        address = game_settings.navigation_parts_mint
+    )]
+    pub navigation_mint: Account<'info, Mint>,
+    #[account(
+        address = game_settings.presents_bag_parts_mint
+    )]
+    pub presents_bag_mint: Account<'info, Mint>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+
+#[derive(Accounts)]
+pub struct Repair {}
+
+#[derive(Accounts)]
+pub struct Retire {}
+
+#[derive(Accounts)]
+pub struct AdminWithdraw {}

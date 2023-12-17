@@ -16,4 +16,10 @@ pub enum BonkersError {
 
     #[msg("")]
     InvalidRollForClaim, // 6004
+
+    #[msg("")]
+    Stage1NotOver, // 6005
+
+    #[msg("")]
+    SleighBroken, // 6006
 }
