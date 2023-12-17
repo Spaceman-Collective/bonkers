@@ -354,4 +354,38 @@ pub struct Retire<'info>{
 }
 
 #[derive(Accounts)]
-pub struct AdminWithdraw {}
+pub struct AdminWithdraw<'info>{
+    #[account(
+        mut,
+        address = ADMIN_ADDRESS
+    )]
+    pub admin: Signer<'info>,
+    pub system_program: Program<'info, System>,
+
+    #[account(
+        mut,
+        seeds=[
+            PREFIX_GAME_SETTINGS,
+            game_settings.game_id.to_be_bytes().as_ref(),
+        ],
+        bump, // Just need the bump here so we can use it in the fn for minting resources
+    )]
+    pub game_settings: Account<'info, GameSettings>,
+
+    // Token Transfer Account
+    #[account(
+        mut,
+        address = get_associated_token_address(&game_settings.key(), &game_settings.coin_mint.key())
+    )]
+    pub game_token_ata: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        address = get_associated_token_address(&admin.key(), &game_settings.coin_mint.key())
+    )]
+    pub admin_ata: Account<'info, TokenAccount>,
+    #[account(
+        address = game_settings.coin_mint.key()
+    )]
+    pub coin_mint: Account<'info, Mint>,
+    pub token_program: Program<'info, Token>,
+}

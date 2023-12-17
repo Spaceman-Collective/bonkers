@@ -628,7 +628,39 @@ pub mod bonkers {
         Ok(())
     }
 
-    pub fn elvish_coffee(ctx: Context<AdminWithdraw>) -> Result<()> {
+    /**
+     * Admin can only withdraw from the wallet when the game is OVER
+     */
+    pub fn elvish_coffee(ctx: Context<AdminWithdraw>, amt: u64) -> Result<()> {
+        let game_settings = &mut ctx.accounts.game_settings;
+
+        if game_settings.sleighs_built != game_settings.sleighs_retired {
+            return err!(BonkersError::GameNotOver);
+        }
+
+        let game_id = game_settings.game_id.to_be_bytes();
+        let game_setting_seeds: &[&[u8]] = &[
+            PREFIX_GAME_SETTINGS,
+            game_id.as_ref(),
+            &[ctx.bumps.game_settings],
+        ];
+        let signer_seeds = &[game_setting_seeds];
+
+        transfer_checked(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                TransferChecked {
+                    from: ctx.accounts.game_token_ata.to_account_info(),
+                    to: ctx.accounts.admin_ata.to_account_info(),
+                    authority: game_settings.to_account_info(),
+                    mint: ctx.accounts.coin_mint.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            amt,
+            game_settings.coin_decimals,
+        )?;
+
         Ok(())
     }
 }
@@ -640,22 +672,3 @@ pub fn get_random_u64(max: u64) -> u64 {
     let target = num / (u64::MAX / max);
     return target;
 }
-
-/*
-   Stg 1
-       -> (needs SPL token) Create Stake Account by depositing an amount of BONK
-       -> Create Roll Account
-       -> Add Roll (Roll max is highest stake + 1)
-       -> Claim points by passing in roll indexes (Track claimed indexes by tracking highest claimed index)
-
-    Stg 2
-       -> /roll
-        -> similar to stg1, increments every interval
-       -> /delivery
-        -> mints resources AND uncovers the malfunction for your sleigh (if any)
-      -> /retire
-        -> scuttles the sleigh
-      -> /repair
-        -> spends resources to fix the sleigh
-        -> Scale with timestep (costs hp+rolls processed to fix each part)
-*/
