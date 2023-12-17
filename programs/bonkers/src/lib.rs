@@ -42,7 +42,7 @@ pub mod bonkers {
         ctx.accounts.game_settings.landing_gear_parts_mint = init.landing_gear_parts_mint;
         ctx.accounts.game_settings.navigation_parts_mint = init.navigation_parts_mint;
         ctx.accounts.game_settings.presents_bag_parts_mint = init.presents_bag_parts_mint;
-
+        ctx.accounts.game_settings.prize_pool = 0;
         Ok(())
     }
 
@@ -551,7 +551,80 @@ pub mod bonkers {
         Ok(())
     }
 
+    /**
+     * Can be called by sleigh owner at any time to scuttle the sleigh and return bonk to the owner
+     * If the sleigh was never built (built_index=0), then returns full bonk amount
+     * Otherwise returns 70*(stake-mintcost) + spoils + prize pool if last sleigh
+     * CHECK to see if anchor closes the account before or after the code in this function executes,
+     * otherwise close the account manually
+     */
     pub fn retire(ctx: Context<Retire>) -> Result<()> {
+        let game_settings = &mut ctx.accounts.game_settings;
+        let slot = Clock::get().unwrap().slot;
+        let sleigh = &mut ctx.accounts.sleigh;
+
+        // Check Stage 1 has ended
+        if game_settings.stage1_end > slot {
+            return err!(BonkersError::Stage1NotOver);
+        }
+
+        let game_id = game_settings.game_id.to_be_bytes();
+        let game_setting_seeds: &[&[u8]] = &[
+            PREFIX_GAME_SETTINGS,
+            game_id.as_ref(),
+            &[ctx.bumps.game_settings],
+        ];
+        let signer_seeds = &[game_setting_seeds];
+
+        if sleigh.built_index == 0 {
+            // return full bonk
+            transfer_checked(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    TransferChecked {
+                        from: ctx.accounts.game_token_ata.to_account_info(),
+                        to: ctx.accounts.sleigh_owner_ata.to_account_info(),
+                        authority: game_settings.to_account_info(),
+                        mint: ctx.accounts.coin_mint.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                sleigh.stake_amt,
+                game_settings.coin_decimals,
+            )?;
+        } else {
+            // return 70%(stake-mintcost) + spoils + prize pool
+            let base_return = (sleigh.stake_amt - sleigh.mint_cost) * (70 / 100);
+            let spoils = (game_settings.sleighs_built - sleigh.built_index)
+                * game_settings.mint_cost_multiplier;
+            let mut prize_pool: u64 = 0;
+            if game_settings.sleighs_retired + 1 == game_settings.sleighs_built {
+                // if this is the last sleigh, then give it the prize pool
+                prize_pool = game_settings.prize_pool
+            } else {
+                // if not the last sleigh, add 20% of it's stake amount to prize pool
+                game_settings.prize_pool += (sleigh.stake_amt - sleigh.mint_cost) * (20 / 100)
+            }
+
+            let returned_coin = base_return + spoils + prize_pool;
+            transfer_checked(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    TransferChecked {
+                        from: ctx.accounts.game_token_ata.to_account_info(),
+                        to: ctx.accounts.sleigh_owner_ata.to_account_info(),
+                        authority: game_settings.to_account_info(),
+                        mint: ctx.accounts.coin_mint.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                returned_coin,
+                game_settings.coin_decimals,
+            )?;
+
+            game_settings.sleighs_retired += 1;
+        }
+
         Ok(())
     }
 

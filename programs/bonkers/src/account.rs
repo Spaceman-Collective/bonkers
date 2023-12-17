@@ -22,11 +22,12 @@ pub struct GameSettings {
     pub landing_gear_parts_mint: Pubkey, // The mint address for this resource instance for this game
     pub navigation_parts_mint: Pubkey, // The mint address for this resource instance for this game
     pub presents_bag_parts_mint: Pubkey, // The mint address for this resource instance for this game
+    pub prize_pool: u64,
 }
 
 impl MaxSize for GameSettings {
     fn get_max_size() -> usize {
-        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32;
+        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8;
     }
 }
 
