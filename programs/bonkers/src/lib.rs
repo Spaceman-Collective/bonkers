@@ -84,11 +84,7 @@ pub mod bonkers {
      * CHECK; stake_amt < current min mint price, if so just throw error
      * CANNOT BE WITHDRAWN UNTIL STAGE 2
      */
-    pub fn create_sleigh(
-        ctx: Context<CreateSleigh>,
-        _sleigh_id: u64,
-        stake_amt: u64,
-    ) -> Result<()> {
+    pub fn create_sleigh(ctx: Context<CreateSleigh>, sleigh_id: u64, stake_amt: u64) -> Result<()> {
         let game_settings = &mut ctx.accounts.game_settings;
 
         // CHECK; stake_amt < current min mint price, if so just throw error
@@ -120,6 +116,7 @@ pub mod bonkers {
         // Create Sleigh account
         let sleigh = &mut ctx.accounts.sleigh;
         sleigh.owner = ctx.accounts.sleigh_owner.key();
+        sleigh.sleigh_id = sleigh_id;
         sleigh.level = 0; // set to 1 after being built
         sleigh.game_id = game_settings.game_id;
         sleigh.built_index = 0; // 0 for unconfirmed sleighs, # for built ones

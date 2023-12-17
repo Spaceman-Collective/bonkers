@@ -45,6 +45,7 @@ impl MaxSize for GameRolls {
 #[account]
 pub struct Sleigh {
     pub owner: Pubkey,
+    pub sleigh_id: u64,
     pub level: u8,
     pub game_id: u64,            // used to search for game accounts by server
     pub built_index: u64,        // set to 0 if unconfirmed so far, first sleigh is index 1
@@ -64,6 +65,6 @@ pub struct Sleigh {
 
 impl MaxSize for Sleigh {
     fn get_max_size() -> usize {
-        return 32 + 1 + 8 + 8 + 8 + 8 + 1 + 8 + 8 + 8 + 4;
+        return 32 + 8 + 1 + 8 + 8 + 8 + 8 + 1 + 8 + 8 + 8 + 4;
     }
 }

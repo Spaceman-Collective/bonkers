@@ -99,7 +99,7 @@ pub struct Stage2Roll<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(_sleigh_id:u64, stake_amt:u64)]
+#[instruction(sleigh_id:u64, stake_amt:u64)]
 pub struct CreateSleigh<'info> {
     #[account(mut)]
     pub sleigh_owner: Signer<'info>,
@@ -121,7 +121,7 @@ pub struct CreateSleigh<'info> {
         seeds=[
             PREFIX_SLEIGH,
             game_settings.game_id.to_be_bytes().as_ref(),
-            _sleigh_id.to_be_bytes().as_ref()
+            sleigh_id.to_be_bytes().as_ref()
         ],
         payer=sleigh_owner,
         space=8+Sleigh::get_max_size(),
