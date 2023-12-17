@@ -16,7 +16,6 @@ pub struct GameSettings {
     pub coin_decimals: u8,  // number of decimals the coin has
     pub sleighs_built: u64, // total number of sleighs built
     pub sleighs_retired: u64, // total number of sleighs retired. game is over when this equals built
-    pub total_spoils: u64,    // total spoils generated through mint costs
     pub mint_cost_multiplier: u64, // sleighs_built*mint_cost_multiplier = cost for next stake
     pub propulsion_parts_mint: Pubkey, // The mint address for this resource instance for this game
     pub landing_gear_parts_mint: Pubkey, // The mint address for this resource instance for this game
@@ -27,7 +26,7 @@ pub struct GameSettings {
 
 impl MaxSize for GameSettings {
     fn get_max_size() -> usize {
-        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8;
+        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8;
     }
 }
 

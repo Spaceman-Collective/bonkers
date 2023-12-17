@@ -36,7 +36,6 @@ pub mod bonkers {
         ctx.accounts.game_settings.coin_mint = init.coin_mint;
         ctx.accounts.game_settings.coin_decimals = init.coin_decimals;
         ctx.accounts.game_settings.sleighs_built = 0;
-        ctx.accounts.game_settings.total_spoils = 0;
         ctx.accounts.game_settings.mint_cost_multiplier = init.mint_cost_multiplier;
         ctx.accounts.game_settings.propulsion_parts_mint = init.propulsion_parts_mint;
         ctx.accounts.game_settings.landing_gear_parts_mint = init.landing_gear_parts_mint;
