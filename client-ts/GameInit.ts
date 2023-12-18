@@ -3,6 +3,9 @@ import { readFileSync } from "fs";
 import * as spl from "@solana/spl-token";
 import { serializeUint64, ByteifyEndianess } from "byteify";
 import { ShadowFile, ShdwDrive } from "@shadow-drive/sdk";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+dotenv.config();
 
 import { Bonkers } from "../target/types/bonkers";
 const bonkersIDL = require("../target/idl/bonkers.json");
@@ -10,7 +13,7 @@ const BONKERS_KEY = new anchor.web3.PublicKey(
   "DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F"
 );
 const CONNECTION = new anchor.web3.Connection(
-  "https://api.mainnet-beta.solana.com", //"http://127.0.0.1:8899",
+  process.env.RPC_DEVNET as string, //"http://127.0.0.1:8899",
   "confirmed"
 );
 const SHDW_BUCKET = "HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m";
@@ -66,13 +69,12 @@ async function main() {
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token
-  //const coinMint = await create_bonk_mint();
+  const coinMint = await create_bonk_mint();
   // Create Parts Tokens and assign Mint auth to Game Settings
-  //const partsMints = await mint_parts_tokens(gameId);
-  // Initalize Bonkers Game
-  //await init_bonkers_game(gameId, coinMint, partsMints);
-
   await uploadPartsTokensMetadataForGameID(gameId);
+  const partsMints = await mint_parts_tokens(gameId);
+  // Initalize Bonkers Game
+  await init_bonkers_game(gameId, coinMint, partsMints);
 }
 
 async function create_bonk_mint() {
@@ -105,7 +107,7 @@ async function create_bonk_mint() {
   return mintAddr;
 }
 
-async function mint_parts_tokens(gameId: anchor.BN) {
+async function mint_parts_tokens_localhost(gameId: anchor.BN) {
   // Mint Authority is the GameSettings PDA
   const mintAuthority = anchor.web3.PublicKey.findProgramAddressSync(
     [
@@ -419,4 +421,68 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
 
   console.log("File upload response: ", response);
   return response;
+}
+
+async function mint_parts_tokens(gameId: anchor.BN): Promise<{
+  propulsionMint: anchor.web3.PublicKey;
+  landingGearMint: anchor.web3.PublicKey;
+  navigationMint: anchor.web3.PublicKey;
+  presentsBagMint: anchor.web3.PublicKey;
+}> {
+  let mintAuthorityPDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("settings"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
+
+  let resources = ["propulsion", "presents_bag", "navigation", "landing_gear"];
+  let resourceMints: {
+    [resource: string]: string; //resouce => mint
+  } = {};
+  for (let resource of resources) {
+    console.log(`Minting Resource ${resource}`);
+    const response: any = await (
+      await fetch("https://api.shyft.to/sol/v1/token/create_from_metadata", {
+        method: "post",
+        headers: {
+          "x-api-key": process.env.SHYFT_KEY!,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          network: "devnet",
+          wallet: mintAuthorityPDA.toString(),
+          fee_payer: ADMIN_KEY.publicKey.toString(),
+          metadata_uri: `https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/${resource}-${gameId}.json`,
+          decimals: 0,
+        }),
+        redirect: "follow",
+      })
+    ).json();
+
+    if (!response.success) {
+      console.error("Trouble minting resource: ", resource);
+      console.error(response);
+    } else {
+      const tx = anchor.web3.Transaction.from(
+        Buffer.from(response.result.encoded_transaction, "base64")
+      );
+      tx.partialSign(ADMIN_KEY);
+      const sig = await CONNECTION.sendRawTransaction(tx.serialize());
+      console.log(`${resource} Mint tx: ${sig}`);
+      resourceMints[resource] = response.result.mint;
+    }
+  }
+  console.log("Resource Mints: ", resourceMints);
+  return {
+    propulsionMint: new anchor.web3.PublicKey(resourceMints["propulsion"]),
+    landingGearMint: new anchor.web3.PublicKey(resourceMints["landing_gear"]),
+    navigationMint: new anchor.web3.PublicKey(resourceMints["navigation"]),
+    presentsBagMint: new anchor.web3.PublicKey(resourceMints["presents_bag"]),
+  };
 }

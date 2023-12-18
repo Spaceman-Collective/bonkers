@@ -7,7 +7,9 @@
         "@coral-xyz/anchor": "^0.29.0",
         "@shadow-drive/sdk": "^5.0.0",
         "@solana/spl-token": "^0.3.9",
-        "byteify": "^4.1.4"
+        "byteify": "^4.1.4",
+        "dotenv": "^16.3.1",
+        "node-fetch": "^3.3.2"
     },
     "devDependencies": {
         "@types/bn.js": "^5.1.0",
