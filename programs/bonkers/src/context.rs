@@ -149,8 +149,6 @@ pub struct CreateSleigh<'info> {
 
 #[derive(Accounts)]
 pub struct ClaimLevels<'info> {
-    pub sleigh_owner: Signer<'info>,
-
     #[account(mut)]
     pub game_settings: Account<'info, GameSettings>,
     #[account(
@@ -164,7 +162,7 @@ pub struct ClaimLevels<'info> {
 
     #[account(
         mut,
-        constraint = (sleigh.game_id == game_settings.game_id) && (sleigh.owner == sleigh_owner.key())
+        constraint = sleigh.game_id == game_settings.game_id
     )]
     pub sleigh: Account<'info, Sleigh>,
 }

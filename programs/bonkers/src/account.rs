@@ -53,7 +53,7 @@ pub struct Sleigh {
     pub stake_amt: u64, // includes mint amt because at start mint amount is not deducted. when returning spoils, use (stake-mint) * 70% + spoils
     pub broken: bool, // if broken, cannot produce any more resources, and can only be scuttled (or rez'd at 70% stake)
     pub staked_after_roll: u64, // the idx of the roll that this was built *after* so they can't claim previous rolls
-    pub last_checked_roll: u64, // up to the last largest idx that was claimed
+    pub last_claimed_roll: u64, // up to the last largest idx that was claimed
     pub last_delivery_roll: u64, // stage 2 rolls
 
     // Parts

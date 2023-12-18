@@ -2,6 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { readFileSync } from "fs";
 import * as spl from "@solana/spl-token";
 import { serializeUint64, ByteifyEndianess } from "byteify";
+import { ShadowFile, ShdwDrive } from "@shadow-drive/sdk";
 
 import { Bonkers } from "../target/types/bonkers";
 const bonkersIDL = require("../target/idl/bonkers.json");
@@ -9,9 +10,10 @@ const BONKERS_KEY = new anchor.web3.PublicKey(
   "DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F"
 );
 const CONNECTION = new anchor.web3.Connection(
-  "http://127.0.0.1:8899",
+  "https://api.mainnet-beta.solana.com", //"http://127.0.0.1:8899",
   "confirmed"
 );
+const SHDW_BUCKET = "HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m";
 
 // 1. Load Admin Key
 const ADMIN_KEY = anchor.web3.Keypair.fromSecretKey(
@@ -64,11 +66,13 @@ async function main() {
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token
-  const coinMint = await create_bonk_mint();
+  //const coinMint = await create_bonk_mint();
   // Create Parts Tokens and assign Mint auth to Game Settings
-  const partsMints = await mint_parts_tokens(gameId);
+  //const partsMints = await mint_parts_tokens(gameId);
   // Initalize Bonkers Game
-  await init_bonkers_game(gameId, coinMint, partsMints);
+  //await init_bonkers_game(gameId, coinMint, partsMints);
+
+  await uploadPartsTokensMetadataForGameID(gameId);
 }
 
 async function create_bonk_mint() {
@@ -241,4 +245,178 @@ async function init_bonkers_game(
   const tx = new anchor.web3.VersionedTransaction(txMsg);
   tx.sign([ADMIN_KEY]);
   await CONNECTION.sendRawTransaction(tx.serialize());
+}
+
+async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
+  const propulsionMetadata = {
+    name: `Propulsion Parts - ${gameId.toString()}`,
+    symbol: "ITS-BONKERS",
+    image:
+      "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/propulsion.png",
+    external_url: "https://itsbonkers.xyz",
+    seller_fee_basis_points: 0,
+    attributes: [
+      {
+        trait_type: "Game ID",
+        value: gameId.toString(),
+      },
+    ],
+    properties: {
+      files: [
+        {
+          id: "item",
+          uri: "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/propulsion.png",
+          type: "image/png",
+        },
+      ],
+      category: "image",
+      collection: {
+        name: "ITS-BONKERS",
+        family: "ITS-BONKERS",
+      },
+      creators: [
+        {
+          address: ADMIN_KEY.publicKey.toString(),
+          share: 100,
+        },
+      ],
+    },
+  };
+
+  const landingGearMetadata = {
+    name: `Landing Gear Parts - ${gameId.toString()}`,
+    symbol: "ITS-BONKERS",
+    image:
+      "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/landing_gear.png",
+    external_url: "https://itsbonkers.xyz",
+    seller_fee_basis_points: 0,
+    attributes: [
+      {
+        trait_type: "Game ID",
+        value: gameId.toString(),
+      },
+    ],
+    properties: {
+      files: [
+        {
+          id: "item",
+          uri: "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/landing_gear.png",
+          type: "image/png",
+        },
+      ],
+      category: "image",
+      collection: {
+        name: "ITS-BONKERS",
+        family: "ITS-BONKERS",
+      },
+      creators: [
+        {
+          address: ADMIN_KEY.publicKey.toString(),
+          share: 100,
+        },
+      ],
+    },
+  };
+
+  const navigationMetadata = {
+    name: `Navigation Parts - ${gameId.toString()}`,
+    symbol: "ITS-BONKERS",
+    image:
+      "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/navigation.png",
+    external_url: "https://itsbonkers.xyz",
+    seller_fee_basis_points: 0,
+    attributes: [
+      {
+        trait_type: "Game ID",
+        value: gameId.toString(),
+      },
+    ],
+    properties: {
+      files: [
+        {
+          id: "item",
+          uri: "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/navigation.png",
+          type: "image/png",
+        },
+      ],
+      category: "image",
+      collection: {
+        name: "ITS-BONKERS",
+        family: "ITS-BONKERS",
+      },
+      creators: [
+        {
+          address: ADMIN_KEY.publicKey.toString(),
+          share: 100,
+        },
+      ],
+    },
+  };
+
+  const presentsBagMetadata = {
+    name: `Presents Bag Parts - ${gameId.toString()}`,
+    symbol: "ITS-BONKERS",
+    image:
+      "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/presents_bag.png",
+    external_url: "https://itsbonkers.xyz",
+    seller_fee_basis_points: 0,
+    attributes: [
+      {
+        trait_type: "Game ID",
+        value: gameId.toString(),
+      },
+    ],
+    properties: {
+      files: [
+        {
+          id: "item",
+          uri: "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/presents_bag.png",
+          type: "image/png",
+        },
+      ],
+      category: "image",
+      collection: {
+        name: "ITS-BONKERS",
+        family: "ITS-BONKERS",
+      },
+      creators: [
+        {
+          address: ADMIN_KEY.publicKey.toString(),
+          share: 100,
+        },
+      ],
+    },
+  };
+
+  let KEY: any = ADMIN_KEY;
+  KEY.payer = ADMIN_KEY;
+  const drive = await new ShdwDrive(CONNECTION, KEY).init();
+  const storageAccount = new anchor.web3.PublicKey(SHDW_BUCKET);
+
+  const propulsionFile: ShadowFile = {
+    file: Buffer.from(JSON.stringify(propulsionMetadata, null, 2)),
+    name: `propulsion-${gameId.toString()}.json`,
+  };
+  const navigationFile: ShadowFile = {
+    file: Buffer.from(JSON.stringify(navigationMetadata, null, 2)),
+    name: `navigation-${gameId.toString()}.json`,
+  };
+  const presentsBagFile: ShadowFile = {
+    file: Buffer.from(JSON.stringify(presentsBagMetadata, null, 2)),
+    name: `presents_bag-${gameId.toString()}.json`,
+  };
+  const landingGearFile: ShadowFile = {
+    file: Buffer.from(JSON.stringify(landingGearMetadata, null, 2)),
+    name: `landing_gear-${gameId.toString()}.json`,
+  };
+
+  const response = await drive.uploadMultipleFiles(storageAccount, [
+    propulsionFile,
+    navigationFile,
+    presentsBagFile,
+    landingGearFile,
+  ]);
+
+  console.log("File upload response: ", response);
+  return response;
 }
