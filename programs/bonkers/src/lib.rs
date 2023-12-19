@@ -282,10 +282,12 @@ pub mod bonkers {
             // Sleigh had a malfunction, let's figure out how much damage each part took
             // we use first 4 bytes (u8) of the roll to determine 4 points of damage
             // we also divide each of these values by half so we aren't doing massive amounts of damage each roll
-            let propulsion_dmg = roll.to_be_bytes()[0] / 2;
-            let landing_gear_dmg = roll.to_be_bytes()[1] / 2;
-            let navigation_dmg = roll.to_be_bytes()[2] / 2;
-            let presents_bag_dmg = roll.to_be_bytes()[3] / 2;
+            let dmg_roll = get_u64_from_two_u64(*roll, sleigh.sleigh_id);
+
+            let propulsion_dmg = dmg_roll.to_be_bytes()[0] / 2;
+            let landing_gear_dmg = dmg_roll.to_be_bytes()[1] / 2;
+            let navigation_dmg = dmg_roll.to_be_bytes()[2] / 2;
+            let presents_bag_dmg = dmg_roll.to_be_bytes()[3] / 2;
 
             if propulsion_dmg > 1 {
                 if sleigh.propulsion_hp == 0 {
@@ -650,4 +652,14 @@ pub fn get_random_u64(max: u64) -> u64 {
     let num: u64 = u64::from_be_bytes(slice.try_into().unwrap());
     let target = num / (u64::MAX / max);
     return target;
+}
+
+pub fn get_u64_from_two_u64(first: u64, second: u64) -> u64 {
+    let slice = &hash(
+        [first.to_be_bytes(), second.to_be_bytes()]
+            .concat()
+            .as_slice(),
+    )
+    .to_bytes()[0..8];
+    return u64::from_be_bytes(slice.try_into().unwrap());
 }
