@@ -65,7 +65,7 @@ async function debug() {
 }
 
 async function main() {
-  const gameId = new anchor.BN(1);
+  const gameId = new anchor.BN(3);
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token
@@ -105,6 +105,32 @@ async function create_bonk_mint() {
   console.log("Mint Created: ", mintAddr.toString());
   console.log("Admin ATA: ", admin_ata.address.toString());
   return mintAddr;
+}
+
+async function mintSPLTo(
+  mint: anchor.web3.PublicKey,
+  recepient: anchor.web3.PublicKey,
+  amount: bigint
+) {
+  const recepientATA = await spl.getOrCreateAssociatedTokenAccount(
+    CONNECTION,
+    ADMIN_KEY,
+    mint,
+    recepient
+  );
+
+  await spl.mintTo(
+    CONNECTION,
+    ADMIN_KEY,
+    mint,
+    recepientATA.address,
+    recepient,
+    amount
+  );
+
+  console.log(
+    `Minted ${amount.toString()} of ${mint.toString()} to ${recepient.toString()}`
+  );
 }
 
 async function mint_parts_tokens_localhost(gameId: anchor.BN) {
@@ -170,13 +196,17 @@ async function init_bonkers_game(
     presentsBagMint: anchor.web3.PublicKey;
   }
 ) {
+  const slot = await CONNECTION.getSlot();
+  const SLOTS_PER_MINUTE = 120;
+  const INTERVAL_IN_MINUTES = 3;
+
   let gameSettings = {
     gameId: gameId,
     highestCurrentStake: new anchor.BN(0),
-    stage1Start: new anchor.BN(266031423), // ~ 12 PM Sunday 17th
-    stage1End: new anchor.BN(266031423 + 172800), //~ends in 24 hours after start
+    stage1Start: new anchor.BN(slot), // ~ 12 PM Sunday 17th
+    stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
     lastRolled: new anchor.BN(0),
-    rollInterval: new anchor.BN(1800), // ~15m in Slots
+    rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE), // ~15m in Slots
     coinMint: coinMint,
     coinDecimals: 5,
     sleighsBuilt: new anchor.BN(0),
@@ -252,7 +282,8 @@ async function init_bonkers_game(
 async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   const propulsionMetadata = {
     name: `Propulsion Parts - ${gameId.toString()}`,
-    symbol: "ITS-BONKERS",
+    symbol: "BNKRS",
+    description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
       "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/propulsion.png",
     external_url: "https://itsbonkers.xyz",
@@ -273,8 +304,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
       ],
       category: "image",
       collection: {
-        name: "ITS-BONKERS",
-        family: "ITS-BONKERS",
+        name: "BNKRS",
+        family: "BNKRS",
       },
       creators: [
         {
@@ -287,7 +318,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
 
   const landingGearMetadata = {
     name: `Landing Gear Parts - ${gameId.toString()}`,
-    symbol: "ITS-BONKERS",
+    symbol: "BNKRS",
+    description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
       "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/landing_gear.png",
     external_url: "https://itsbonkers.xyz",
@@ -308,8 +340,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
       ],
       category: "image",
       collection: {
-        name: "ITS-BONKERS",
-        family: "ITS-BONKERS",
+        name: "BNKRS",
+        family: "BNKRS",
       },
       creators: [
         {
@@ -322,7 +354,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
 
   const navigationMetadata = {
     name: `Navigation Parts - ${gameId.toString()}`,
-    symbol: "ITS-BONKERS",
+    symbol: "BNKRS",
+    description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
       "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/navigation.png",
     external_url: "https://itsbonkers.xyz",
@@ -343,8 +376,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
       ],
       category: "image",
       collection: {
-        name: "ITS-BONKERS",
-        family: "ITS-BONKERS",
+        name: "BNKRS",
+        family: "BNKRS",
       },
       creators: [
         {
@@ -357,7 +390,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
 
   const presentsBagMetadata = {
     name: `Presents Bag Parts - ${gameId.toString()}`,
-    symbol: "ITS-BONKERS",
+    symbol: "BNKRS",
+    description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
       "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/presents_bag.png",
     external_url: "https://itsbonkers.xyz",
@@ -378,8 +412,8 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
       ],
       category: "image",
       collection: {
-        name: "ITS-BONKERS",
-        family: "ITS-BONKERS",
+        name: "BNKRS",
+        family: "BNKRS",
       },
       creators: [
         {
@@ -458,7 +492,7 @@ async function mint_parts_tokens(gameId: anchor.BN): Promise<{
           network: "devnet",
           wallet: mintAuthorityPDA.toString(),
           fee_payer: ADMIN_KEY.publicKey.toString(),
-          metadata_uri: `https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/${resource}-${gameId}.json`,
+          metadata_uri: `https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/${resource}-${gameId.toString()}.json`,
           decimals: 0,
         }),
         redirect: "follow",
