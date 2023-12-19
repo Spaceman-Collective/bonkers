@@ -65,14 +65,16 @@ async function debug() {
 }
 
 async function main() {
-  const gameId = new anchor.BN(3);
+  const gameId = new anchor.BN(4);
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token
   const coinMint = await create_bonk_mint();
   // Create Parts Tokens and assign Mint auth to Game Settings
-  await uploadPartsTokensMetadataForGameID(gameId);
-  const partsMints = await mint_parts_tokens(gameId);
+  //await uploadPartsTokensMetadataForGameID(gameId);
+  //const partsMints = await mint_parts_tokens(gameId);
+  const partsMints = await mint_parts_tokens_without_metadata(gameId);
+
   // Initalize Bonkers Game
   await init_bonkers_game(gameId, coinMint, partsMints);
 }
@@ -133,7 +135,7 @@ async function mintSPLTo(
   );
 }
 
-async function mint_parts_tokens_localhost(gameId: anchor.BN) {
+async function mint_parts_tokens_without_metadata(gameId: anchor.BN) {
   // Mint Authority is the GameSettings PDA
   const mintAuthority = anchor.web3.PublicKey.findProgramAddressSync(
     [
@@ -203,10 +205,10 @@ async function init_bonkers_game(
   let gameSettings = {
     gameId: gameId,
     highestCurrentStake: new anchor.BN(0),
-    stage1Start: new anchor.BN(slot), // ~ 12 PM Sunday 17th
+    stage1Start: new anchor.BN(slot),
     stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
     lastRolled: new anchor.BN(0),
-    rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE), // ~15m in Slots
+    rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
     coinMint: coinMint,
     coinDecimals: 5,
     sleighsBuilt: new anchor.BN(0),
@@ -265,7 +267,7 @@ async function init_bonkers_game(
       gameRollsStg1: rollSTG1PDA,
       gameRollsStg2: rollSTG2PDA,
     })
-    .signers([])
+    .signers([ADMIN_KEY])
     .instruction();
 
   const { blockhash } = await CONNECTION.getLatestBlockhash();
