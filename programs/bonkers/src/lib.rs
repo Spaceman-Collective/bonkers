@@ -256,8 +256,12 @@ pub mod bonkers {
         // Confirm Malfunction
         // Check if the Sleigh was damaged
         // range of selection starts at 1% and grows by 1% every roll interval
-        let range_of_selection =
+        let mut range_of_selection =
             ((1 + sleigh.last_delivery_roll) / 100) * game_settings.sleighs_built;
+
+        if range_of_selection > 100 {
+            range_of_selection = 100;
+        }
 
         // Check which parts were damaged
         // this picks a random number between 0 and total number of slieghs
