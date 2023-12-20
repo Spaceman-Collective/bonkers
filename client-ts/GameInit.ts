@@ -99,7 +99,8 @@ async function debug() {
     (currentSlot - gameSettings.stage1Start.toNumber()) /
       gameSettings.rollInterval.toNumber()
   );
-  console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG1PDA));
+  const rolls1 = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG1PDA);
+  console.log("Roll 1 rolls: ", rolls1.rolls.length);
   console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA));
 }
 

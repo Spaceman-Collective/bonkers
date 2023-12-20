@@ -122,9 +122,15 @@ async function main() {
           }).compileToLegacyMessage();
           const tx = new anchor.web3.VersionedTransaction(txMsg);
           tx.sign([ADMIN_KEY]);
-          await CONNECTION.sendRawTransaction(tx.serialize(), {
-            maxRetries: 30,
-          });
+          try {
+            await CONNECTION.sendRawTransaction(tx.serialize());
+          } catch (e) {
+            if (e.toString().includes("0x1772")) {
+              console.log("Timeout...");
+            } else {
+              console.error(e);
+            }
+          }
           console.log(`Made a stage 1 roll at slot: ${currentSlot}`);
         } else {
           // stage 2
@@ -149,23 +155,22 @@ async function main() {
           const tx = new anchor.web3.VersionedTransaction(txMsg);
           tx.sign([ADMIN_KEY]);
           await CONNECTION.sendRawTransaction(tx.serialize(), {
-            maxRetries: 30,
+            maxRetries: 3,
           });
           console.log(`Made a stage 2 roll at slot: ${currentSlot}`);
         }
       }
 
       console.log("Roller sleeping til next timeout...");
+      gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
+        gameSettingsPDA
+      );
+      currentSlot = await CONNECTION.getSlot();
       await timeout(
         gameSettings.lastRolled.toNumber() +
           gameSettings.rollInterval.toNumber() -
           currentSlot
       );
-
-      gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
-        gameSettingsPDA
-      );
-      currentSlot = await CONNECTION.getSlot();
     } catch (e) {
       console.error("Roller Error: ", e);
     }

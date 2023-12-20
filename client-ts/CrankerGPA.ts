@@ -94,7 +94,7 @@ async function main() {
     ]);
     console.log("Sleighs found: ", sleighs.length);
 
-    const currentSlot = await CONNECTION.getSlot();
+    let currentSlot = await CONNECTION.getSlot();
 
     // stage 1
     if (
@@ -125,9 +125,10 @@ async function main() {
             }).compileToLegacyMessage();
             const tx = new anchor.web3.VersionedTransaction(txMsg);
             tx.sign([ADMIN_KEY]);
-            await CONNECTION.sendRawTransaction(tx.serialize(), {
-              maxRetries: 30,
+            const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
+              maxRetries: 3,
             });
+            await CONNECTION.confirmTransaction(sig);
             console.log(
               `Cranked ${sleigh.account.sleighId.toString} in Stage 1`
             );
@@ -186,9 +187,10 @@ async function main() {
             }).compileToLegacyMessage();
             const tx = new anchor.web3.VersionedTransaction(txMsg);
             tx.sign([ADMIN_KEY]);
-            await CONNECTION.sendRawTransaction(tx.serialize(), {
-              maxRetries: 30,
+            const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
+              maxRetries: 3,
             });
+            await CONNECTION.confirmTransaction(sig);
             console.log(
               `Cranked ${sleigh.account.sleighId.toString} in Stage 2`
             );
@@ -200,16 +202,16 @@ async function main() {
       await timeout(
         gameSettings.stage1Start.toNumber() -
           currentSlot +
-          gameSettings.rollInterval.toNumber() +
-          2
+          gameSettings.rollInterval.toNumber()
       );
     }
     console.log("Sleeping for interval and checking sleighs again...");
     // sleep for interval and check sleighs again
-    await timeout(
-      (currentSlot % gameSettings.stage1Start.toNumber()) -
-        gameSettings.rollInterval.toNumber()
+    gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
+      gameSettingsPDA
     );
+    currentSlot = await CONNECTION.getSlot();
+    await timeout(gameSettings.rollInterval.toNumber());
   }
 }
 
