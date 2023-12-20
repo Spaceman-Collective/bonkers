@@ -35,46 +35,45 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
 
 const gameId = new anchor.BN(5);
 
+let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
+  [
+    Buffer.from("settings"),
+    Uint8Array.from(
+      serializeUint64(BigInt(gameId.toString()), {
+        endianess: ByteifyEndianess.BIG_ENDIAN,
+      })
+    ),
+  ],
+  BONKERS_KEY
+)[0];
+
+let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
+  [
+    Buffer.from("game_rolls_stg1"),
+    Uint8Array.from(
+      serializeUint64(BigInt(gameId.toString()), {
+        endianess: ByteifyEndianess.BIG_ENDIAN,
+      })
+    ),
+  ],
+  BONKERS_KEY
+)[0];
+
+let rollSTG2PDA = anchor.web3.PublicKey.findProgramAddressSync(
+  [
+    Buffer.from("game_rolls_stg2"),
+    Uint8Array.from(
+      serializeUint64(BigInt(gameId.toString()), {
+        endianess: ByteifyEndianess.BIG_ENDIAN,
+      })
+    ),
+  ],
+  BONKERS_KEY
+)[0];
+
 main();
+
 async function main() {
-  // Fetch current slot
-  // Fetch game settings last roll
-  let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("settings"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("game_rolls_stg1"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  let rollSTG2PDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("game_rolls_stg2"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
   let gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
     gameSettingsPDA
   );
@@ -83,84 +82,92 @@ async function main() {
   let currentSlot = await CONNECTION.getSlot();
   if (currentSlot < gameSettings.stage1Start.toNumber()) {
     // sleep til game start
-    await timeout(
-      gameSettings.stage1Start.toNumber() -
-        currentSlot +
-        gameSettings.rollInterval.toNumber() +
-        2
+    console.log(
+      `Sleeping ${
+        (gameSettings.stage1Start.toNumber() - currentSlot) * 500
+      } ms til start of game!`
     );
-  } else {
-    while (currentSlot < gameSettings.stage1End.toNumber()) {
-      // stage 1
-      await timeout(
-        (currentSlot % gameSettings.stage1Start.toNumber()) -
-          gameSettings.rollInterval.toNumber()
-      );
+    await timeout(gameSettings.stage1Start.toNumber() - currentSlot);
+  }
 
-      // Make roll tx
-      const ix = await BONKERS_PROGRAM.methods
-        .stage1Roll()
-        .accounts({
-          payer: ADMIN_KEY.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          gameSettings: gameSettingsPDA,
-          gameRolls: rollSTG1PDA,
-        })
-        .signers([ADMIN_KEY])
-        .instruction();
-
-      const { blockhash } = await CONNECTION.getLatestBlockhash();
-      const txMsg = new anchor.web3.TransactionMessage({
-        payerKey: ADMIN_KEY.publicKey,
-        recentBlockhash: blockhash,
-        instructions: [ix],
-      }).compileToLegacyMessage();
-      const tx = new anchor.web3.VersionedTransaction(txMsg);
-      tx.sign([ADMIN_KEY]);
-      await CONNECTION.sendRawTransaction(tx.serialize(), { maxRetries: 30 });
-      console.log(`Made a roll at slot: ${currentSlot}`);
-      currentSlot = await CONNECTION.getSlot();
-    }
-
+  console.log("Starting roller....");
+  while (true) {
     try {
-      // stage 2
-      while (true) {
+      // If last_rolled + interval < slot, roll either stage 1 or 2
+      // else sleep for (last_rolled+interval) - currentSlot
+      if (
+        gameSettings.lastRolled.toNumber() +
+          gameSettings.rollInterval.toNumber() <
+        currentSlot
+      ) {
+        if (currentSlot < gameSettings.stage1End.toNumber()) {
+          // stage 1
+          // Make roll tx
+          const ix = await BONKERS_PROGRAM.methods
+            .stage1Roll()
+            .accounts({
+              payer: ADMIN_KEY.publicKey,
+              systemProgram: anchor.web3.SystemProgram.programId,
+              gameSettings: gameSettingsPDA,
+              gameRolls: rollSTG1PDA,
+            })
+            .signers([ADMIN_KEY])
+            .instruction();
+
+          const { blockhash } = await CONNECTION.getLatestBlockhash();
+          const txMsg = new anchor.web3.TransactionMessage({
+            payerKey: ADMIN_KEY.publicKey,
+            recentBlockhash: blockhash,
+            instructions: [ix],
+          }).compileToLegacyMessage();
+          const tx = new anchor.web3.VersionedTransaction(txMsg);
+          tx.sign([ADMIN_KEY]);
+          await CONNECTION.sendRawTransaction(tx.serialize(), {
+            maxRetries: 30,
+          });
+          console.log(`Made a stage 1 roll at slot: ${currentSlot}`);
+        } else {
+          // stage 2
+          // Make roll tx
+          const ix = await BONKERS_PROGRAM.methods
+            .stage2Roll()
+            .accounts({
+              payer: ADMIN_KEY.publicKey,
+              systemProgram: anchor.web3.SystemProgram.programId,
+              gameSettings: gameSettingsPDA,
+              gameRolls: rollSTG2PDA,
+            })
+            .signers([ADMIN_KEY])
+            .instruction();
+
+          const { blockhash } = await CONNECTION.getLatestBlockhash();
+          const txMsg = new anchor.web3.TransactionMessage({
+            payerKey: ADMIN_KEY.publicKey,
+            recentBlockhash: blockhash,
+            instructions: [ix],
+          }).compileToLegacyMessage();
+          const tx = new anchor.web3.VersionedTransaction(txMsg);
+          tx.sign([ADMIN_KEY]);
+          await CONNECTION.sendRawTransaction(tx.serialize(), {
+            maxRetries: 30,
+          });
+          console.log(`Made a stage 2 roll at slot: ${currentSlot}`);
+        }
+      } else {
         await timeout(
-          (currentSlot % gameSettings.stage1End.toNumber()) -
-            gameSettings.rollInterval.toNumber()
+          gameSettings.lastRolled.toNumber() +
+            gameSettings.rollInterval.toNumber() -
+            currentSlot
         );
-
-        // Make roll tx
-        const ix = await BONKERS_PROGRAM.methods
-          .stage2Roll()
-          .accounts({
-            payer: ADMIN_KEY.publicKey,
-            systemProgram: anchor.web3.SystemProgram.programId,
-            gameSettings: gameSettingsPDA,
-            gameRolls: rollSTG2PDA,
-          })
-          .signers([ADMIN_KEY])
-          .instruction();
-
-        const { blockhash } = await CONNECTION.getLatestBlockhash();
-        const txMsg = new anchor.web3.TransactionMessage({
-          payerKey: ADMIN_KEY.publicKey,
-          recentBlockhash: blockhash,
-          instructions: [ix],
-        }).compileToLegacyMessage();
-        const tx = new anchor.web3.VersionedTransaction(txMsg);
-        tx.sign([ADMIN_KEY]);
-        await CONNECTION.sendRawTransaction(tx.serialize(), {
-          maxRetries: 30,
-        });
-        console.log(`Made a roll at slot: ${currentSlot}`);
-        currentSlot = await CONNECTION.getSlot();
       }
+      gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
+        gameSettingsPDA
+      );
+      currentSlot = await CONNECTION.getSlot();
     } catch (e) {
-      console.log("Stage 2 rolls failed.");
+      console.error("Roller Error: ", e);
     }
   }
-  console.log("Roller ended!");
 }
 
 /**
