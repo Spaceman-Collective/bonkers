@@ -36,18 +36,19 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-main();
+//main();
 
-async function debug() {
-  const gameId = new anchor.BN(1);
-  console.log(
-    Uint8Array.from(
-      serializeUint64(BigInt(gameId.toString()), {
-        endianess: ByteifyEndianess.BIG_ENDIAN,
-      })
-    )
-  );
-  const gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
+/*
+mintSPLTo(
+  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
+  new anchor.web3.PublicKey("3qwLncThxr13nFMeEANUV8ZR1V6ndQo3F7ky36LwDXhf"),
+  BigInt(100000000000)
+);
+*/
+
+(async () => {
+  const gameId = new anchor.BN(5);
+  let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from("settings"),
       Uint8Array.from(
@@ -59,17 +60,53 @@ async function debug() {
     BONKERS_KEY
   )[0];
 
-  console.log(gameSettingsPDA.toString());
+  let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("game_rolls_stg1"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
 
-  // Correct: 3gS2X2TWj3wJxTJu4svq9mc9fWwyFufzTNvsFqdXaS5W
-}
+  let rollSTG2PDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("game_rolls_stg2"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
+  const gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
+    gameSettingsPDA
+  );
+  console.log("Game Settings: ", gameSettings);
+  console.log(`Start: ${gameSettings.stage1Start.toString()}`);
+  console.log(`Stage 1 End: ${gameSettings.stage1End.toString()}`);
+
+  const currentSlot = await CONNECTION.getSlot();
+  console.log("Current Slot: ", currentSlot);
+  console.log(
+    "Number of Rolls that should've happened: ",
+    (currentSlot - gameSettings.stage1Start.toNumber()) /
+      gameSettings.rollInterval.toNumber()
+  );
+  console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG1PDA));
+  console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA));
+})();
 
 async function main() {
-  const gameId = new anchor.BN(4);
+  const gameId = new anchor.BN(5);
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token
-  const coinMint = await create_bonk_mint();
+  const coinMint = await create_bonk_mint(gameId);
   // Create Parts Tokens and assign Mint auth to Game Settings
   //await uploadPartsTokensMetadataForGameID(gameId);
   //const partsMints = await mint_parts_tokens(gameId);
@@ -79,7 +116,7 @@ async function main() {
   await init_bonkers_game(gameId, coinMint, partsMints);
 }
 
-async function create_bonk_mint() {
+async function create_bonk_mint(gameId: anchor.BN) {
   const mintAddr = await spl.createMint(
     CONNECTION,
     ADMIN_KEY,
@@ -104,8 +141,29 @@ async function create_bonk_mint() {
     100000000
   );
 
+  let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("settings"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
+
+  const gameATA = await spl.getOrCreateAssociatedTokenAccount(
+    CONNECTION,
+    ADMIN_KEY,
+    mintAddr,
+    gameSettingsPDA,
+    true
+  );
+
   console.log("Mint Created: ", mintAddr.toString());
   console.log("Admin ATA: ", admin_ata.address.toString());
+  console.log("Game ATA", gameATA.toString());
   return mintAddr;
 }
 
@@ -126,7 +184,7 @@ async function mintSPLTo(
     ADMIN_KEY,
     mint,
     recepientATA.address,
-    recepient,
+    ADMIN_KEY,
     amount
   );
 

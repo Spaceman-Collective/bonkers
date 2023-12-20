@@ -5,7 +5,8 @@ import { readFileSync } from "fs";
 import * as spl from "@solana/spl-token";
 import { serializeUint64, ByteifyEndianess } from "byteify";
 import { encode, decode } from "bs58";
-
+import dotenv from "dotenv";
+dotenv.config();
 import { Bonkers } from "../target/types/bonkers";
 const bonkersIDL = require("../target/idl/bonkers.json");
 const BONKERS_KEY = new anchor.web3.PublicKey(
@@ -33,7 +34,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   BONKERS_KEY,
   { connection: CONNECTION }
 );
-const gameId = new anchor.BN(1);
+const gameId = new anchor.BN(5);
 const rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
   [
     Buffer.from("game_rolls_stg1"),
@@ -75,12 +76,12 @@ async function main() {
   let gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
     gameSettingsPDA
   );
-
+  console.log("Game Settings: ", gameSettings);
   let gameIdBuffer = gameId.toArrayLike(Buffer, "le", 8);
-
   while (
+    gameSettings.sleighsBuilt.toNumber() == 0 ||
     gameSettings.sleighsBuilt.toNumber() !=
-    gameSettings.sleighsRetired.toNumber()
+      gameSettings.sleighsRetired.toNumber()
   ) {
     // Fetch all sleighs by gameId
     let sleighs = await BONKERS_PROGRAM.account.sleigh.all([
@@ -126,6 +127,9 @@ async function main() {
             await CONNECTION.sendRawTransaction(tx.serialize(), {
               maxRetries: 30,
             });
+            console.log(
+              `Cranked ${sleigh.account.sleighId.toString} in Stage 1`
+            );
           }
         })
       );
@@ -184,6 +188,9 @@ async function main() {
             await CONNECTION.sendRawTransaction(tx.serialize(), {
               maxRetries: 30,
             });
+            console.log(
+              `Cranked ${sleigh.account.sleighId.toString} in Stage 2`
+            );
           }
         })
       );

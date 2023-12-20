@@ -2,9 +2,9 @@
 
 import * as anchor from "@coral-xyz/anchor";
 import { readFileSync } from "fs";
-import * as spl from "@solana/spl-token";
 import { serializeUint64, ByteifyEndianess } from "byteify";
-
+import dotenv from "dotenv";
+dotenv.config();
 import { Bonkers } from "../target/types/bonkers";
 const bonkersIDL = require("../target/idl/bonkers.json");
 const BONKERS_KEY = new anchor.web3.PublicKey(
@@ -33,7 +33,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-const gameId = new anchor.BN(1);
+const gameId = new anchor.BN(5);
 
 main();
 async function main() {
@@ -79,8 +79,6 @@ async function main() {
     gameSettingsPDA
   );
 
-  const INTERVAL_IN_SLOTS = gameSettings.rollInterval.toNumber(); //while u64, should not be greater than a billion
-
   // Check if game has started
   let currentSlot = await CONNECTION.getSlot();
   if (currentSlot < gameSettings.stage1Start.toNumber()) {
@@ -96,8 +94,7 @@ async function main() {
       // stage 1
       await timeout(
         (currentSlot % gameSettings.stage1Start.toNumber()) -
-          gameSettings.rollInterval.toNumber() +
-          2
+          gameSettings.rollInterval.toNumber()
       );
 
       // Make roll tx
@@ -121,7 +118,7 @@ async function main() {
       const tx = new anchor.web3.VersionedTransaction(txMsg);
       tx.sign([ADMIN_KEY]);
       await CONNECTION.sendRawTransaction(tx.serialize(), { maxRetries: 30 });
-
+      console.log(`Made a roll at slot: ${currentSlot}`);
       currentSlot = await CONNECTION.getSlot();
     }
 
@@ -156,7 +153,7 @@ async function main() {
         await CONNECTION.sendRawTransaction(tx.serialize(), {
           maxRetries: 30,
         });
-
+        console.log(`Made a roll at slot: ${currentSlot}`);
         currentSlot = await CONNECTION.getSlot();
       }
     } catch (e) {

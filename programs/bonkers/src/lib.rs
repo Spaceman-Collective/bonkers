@@ -66,7 +66,7 @@ pub mod bonkers {
         }
 
         // Roll a number based on highest stake
-        let random_number = get_random_u64(2 * game_settings.highest_current_stake);
+        let random_number = get_random_u64(2 * game_settings.highest_current_stake + 1);
 
         // Store to rolls
         ctx.accounts.game_rolls.rolls.push(random_number);
@@ -85,6 +85,13 @@ pub mod bonkers {
      */
     pub fn create_sleigh(ctx: Context<CreateSleigh>, sleigh_id: u64, stake_amt: u64) -> Result<()> {
         let game_settings = &mut ctx.accounts.game_settings;
+
+        // Check Stage 1 has not ended
+        let clock = Clock::get().unwrap();
+        let slot = clock.slot;
+        if slot > game_settings.stage1_end {
+            return err!(BonkersError::Stage1Ended);
+        }
 
         // CHECK; stake_amt < current min mint price, if so just throw error
         let current_mint_cost = game_settings.sleighs_built * game_settings.mint_cost_multiplier;
