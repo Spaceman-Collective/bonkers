@@ -101,7 +101,9 @@ async function debug() {
   );
   const rolls1 = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG1PDA);
   console.log("Roll 1 rolls: ", rolls1.rolls.length);
-  console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA));
+  console.log(rolls1.rolls);
+
+  //console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA));
 }
 
 async function main() {
@@ -147,29 +149,8 @@ async function create_bonk_mint(gameId: anchor.BN) {
     100000000
   );
 
-  let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("settings"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  const gameATA = await spl.getOrCreateAssociatedTokenAccount(
-    CONNECTION,
-    ADMIN_KEY,
-    mintAddr,
-    gameSettingsPDA,
-    true
-  );
-
   console.log("Mint Created: ", mintAddr.toString());
   console.log("Admin ATA: ", admin_ata.address.toString());
-  console.log("Game ATA", gameATA.toString());
   return mintAddr;
 }
 
@@ -539,6 +520,14 @@ async function init_bonkers_game(
     ],
     BONKERS_KEY
   )[0];
+
+  await spl.getOrCreateAssociatedTokenAccount(
+    CONNECTION,
+    ADMIN_KEY,
+    coinMint,
+    gameSettingsPDA,
+    true
+  );
 
   let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
     [

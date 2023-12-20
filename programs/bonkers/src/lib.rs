@@ -57,7 +57,7 @@ pub mod bonkers {
             return err!(BonkersError::GameNotStarted);
         }
         // Check Stage 1 has ended
-        if game_settings.stage1_end < slot {
+        if slot > game_settings.stage1_end {
             return err!(BonkersError::Stage1Ended);
         }
         // Check if enough slots have elapsed since last roll
@@ -155,7 +155,7 @@ pub mod bonkers {
         let clock = Clock::get().unwrap();
         let slot = clock.slot;
         let game_settings = &mut ctx.accounts.game_settings;
-        if game_settings.stage1_end > slot {
+        if slot > game_settings.stage1_end {
             return err!(BonkersError::Stage1Ended);
         }
 

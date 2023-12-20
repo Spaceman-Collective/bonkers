@@ -105,33 +105,41 @@ async function main() {
       Promise.all(
         sleighs.map(async (sleigh) => {
           if (
-            roll1Acc.rolls.length >
-            sleigh.account.lastClaimedRoll.toNumber() + 2
+            roll1Acc.rolls.length > sleigh.account.lastClaimedRoll.toNumber()
           ) {
-            // Crank this sleigh
-            const ix = await BONKERS_PROGRAM.methods
-              .claimLevels()
-              .accounts({
-                gameSettings: gameSettingsPDA,
-                gameRolls: rollSTG1PDA,
-                sleigh: sleigh.publicKey,
-              })
-              .instruction();
-            const { blockhash } = await CONNECTION.getLatestBlockhash();
-            const txMsg = new anchor.web3.TransactionMessage({
-              payerKey: ADMIN_KEY.publicKey,
-              recentBlockhash: blockhash,
-              instructions: [ix],
-            }).compileToLegacyMessage();
-            const tx = new anchor.web3.VersionedTransaction(txMsg);
-            tx.sign([ADMIN_KEY]);
-            const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
-              maxRetries: 3,
-            });
-            await CONNECTION.confirmTransaction(sig);
-            console.log(
-              `Cranked ${sleigh.account.sleighId.toString} in Stage 1`
-            );
+            for (
+              let i = 0;
+              i <
+              roll1Acc.rolls.length -
+                sleigh.account.lastClaimedRoll.toNumber() -
+                1;
+              i++
+            ) {
+              // Crank this sleigh
+              const ix = await BONKERS_PROGRAM.methods
+                .claimLevels()
+                .accounts({
+                  gameSettings: gameSettingsPDA,
+                  gameRolls: rollSTG1PDA,
+                  sleigh: sleigh.publicKey,
+                })
+                .instruction();
+              const { blockhash } = await CONNECTION.getLatestBlockhash();
+              const txMsg = new anchor.web3.TransactionMessage({
+                payerKey: ADMIN_KEY.publicKey,
+                recentBlockhash: blockhash,
+                instructions: [ix],
+              }).compileToLegacyMessage();
+              const tx = new anchor.web3.VersionedTransaction(txMsg);
+              tx.sign([ADMIN_KEY]);
+              const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
+                maxRetries: 3,
+              });
+              await CONNECTION.confirmTransaction(sig);
+              console.log(
+                `Cranked ${sleigh.account.sleighId.toString()} in Stage 1`
+              );
+            }
           }
         })
       );
@@ -192,7 +200,7 @@ async function main() {
             });
             await CONNECTION.confirmTransaction(sig);
             console.log(
-              `Cranked ${sleigh.account.sleighId.toString} in Stage 2`
+              `Cranked ${sleigh.account.sleighId.toString()} in Stage 2`
             );
           }
         })
