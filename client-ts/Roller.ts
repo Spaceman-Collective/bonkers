@@ -154,9 +154,15 @@ async function main() {
           }).compileToLegacyMessage();
           const tx = new anchor.web3.VersionedTransaction(txMsg);
           tx.sign([ADMIN_KEY]);
-          await CONNECTION.sendRawTransaction(tx.serialize(), {
-            maxRetries: 3,
-          });
+          try {
+            await CONNECTION.sendRawTransaction(tx.serialize());
+          } catch (e) {
+            if (e.toString().includes("0x1772")) {
+              console.log("Timeout...");
+            } else {
+              console.error(e);
+            }
+          }
           console.log(`Made a stage 2 roll at slot: ${currentSlot}`);
         }
       }

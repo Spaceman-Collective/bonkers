@@ -95,6 +95,11 @@ async function debug() {
   const currentSlot = await CONNECTION.getSlot();
   console.log("Current Slot: ", currentSlot);
   console.log(
+    "Minutes left til Stage 1 End: ",
+    (gameSettings.stage1End.toNumber() - currentSlot) / 120
+  );
+
+  console.log(
     "Number of Rolls that should've happened: ",
     (currentSlot - gameSettings.stage1Start.toNumber()) /
       gameSettings.rollInterval.toNumber()

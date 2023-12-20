@@ -143,14 +143,17 @@ async function main() {
           }
         })
       );
-    } else if (currentSlot > gameSettings.stage1Start.toNumber()) {
+    } else if (currentSlot > gameSettings.stage1End.toNumber()) {
       // stage 2
       let roll2Acc = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA);
       Promise.all(
         sleighs.map(async (sleigh) => {
           if (
-            roll2Acc.rolls.length >
-            sleigh.account.lastDeliveryRoll.toNumber() + 2
+            (roll2Acc.rolls.length > 0 &&
+              sleigh.account.lastDeliveryRoll.toString() ==
+                "18446744073709552000") ||
+            new anchor.BN(roll2Acc.rolls.length) >
+              sleigh.account.lastDeliveryRoll.add(new anchor.BN(2))
           ) {
             // Crank this sleigh
             const propulsionATA = spl.getAssociatedTokenAddressSync(

@@ -198,43 +198,43 @@ pub struct Delivery<'info> {
     // Requires ATA of the sleigh_owner for each resource (check owner, and mint)
     #[account(
         mut,
-        owner = sleigh.owner,
-        constraint = sleigh_propulsion_parts_ata.mint == game_settings.propulsion_parts_mint
+        constraint = (sleigh_propulsion_parts_ata.mint == game_settings.propulsion_parts_mint) && (sleigh_navigation_parts_ata.owner == sleigh.owner)
     )]
     pub sleigh_propulsion_parts_ata: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        owner = sleigh.owner,
-        constraint = sleigh_landing_gear_parts_ata.mint == game_settings.landing_gear_parts_mint
+        constraint = (sleigh_landing_gear_parts_ata.mint == game_settings.landing_gear_parts_mint) && (sleigh_landing_gear_parts_ata.owner == sleigh.owner)
     )]
     pub sleigh_landing_gear_parts_ata: Account<'info, TokenAccount>,
     #[account(
         mut,
-        owner = sleigh.owner,
-        constraint = sleigh_navigation_parts_ata.mint == game_settings.navigation_parts_mint
+        constraint = (sleigh_navigation_parts_ata.mint == game_settings.navigation_parts_mint) && (sleigh_navigation_parts_ata.owner == sleigh.owner)
     )]
     pub sleigh_navigation_parts_ata: Account<'info, TokenAccount>,
     #[account(
         mut,
-        owner = sleigh.owner,
-        constraint = sleigh_presents_bag_parts_ata.mint == game_settings.presents_bag_parts_mint
+        constraint = (sleigh_presents_bag_parts_ata.mint == game_settings.presents_bag_parts_mint) && (sleigh_presents_bag_parts_ata.owner == sleigh.owner)
     )]
     pub sleigh_presents_bag_parts_ata: Account<'info, TokenAccount>,
 
     #[account(
+        mut,
         address = game_settings.propulsion_parts_mint
     )]
     pub propulsion_mint: Account<'info, Mint>,
     #[account(
+        mut,
         address = game_settings.landing_gear_parts_mint
     )]
     pub landing_gear_mint: Account<'info, Mint>,
     #[account(
+        mut,
         address = game_settings.navigation_parts_mint
     )]
     pub navigation_mint: Account<'info, Mint>,
     #[account(
+        mut,
         address = game_settings.presents_bag_parts_mint
     )]
     pub presents_bag_mint: Account<'info, Mint>,
@@ -291,18 +291,22 @@ pub struct Repair<'info>{
     pub sleigh_presents_bag_parts_ata: Account<'info, TokenAccount>,
 
     #[account(
+        mut,
         address = game_settings.propulsion_parts_mint
     )]
     pub propulsion_mint: Account<'info, Mint>,
     #[account(
+        mut,
         address = game_settings.landing_gear_parts_mint
     )]
     pub landing_gear_mint: Account<'info, Mint>,
     #[account(
+        mut,
         address = game_settings.navigation_parts_mint
     )]
     pub navigation_mint: Account<'info, Mint>,
     #[account(
+        mut,
         address = game_settings.presents_bag_parts_mint
     )]
     pub presents_bag_mint: Account<'info, Mint>,
