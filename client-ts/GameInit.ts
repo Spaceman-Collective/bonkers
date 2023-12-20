@@ -46,7 +46,9 @@ mintSPLTo(
 );
 */
 
-(async () => {
+//debug();
+
+async function debug() {
   const gameId = new anchor.BN(5);
   let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
     [
@@ -99,14 +101,17 @@ mintSPLTo(
   );
   console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG1PDA));
   console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA));
-})();
+}
 
 async function main() {
   const gameId = new anchor.BN(5);
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
-  // Create Bonk Token
-  const coinMint = await create_bonk_mint(gameId);
+  // Create Bonk Token -- just need to do it once and reuse it for all stuff
+  const coinMint = new anchor.web3.PublicKey(
+    "Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"
+  ); //await create_bonk_mint(gameId);
+
   // Create Parts Tokens and assign Mint auth to Game Settings
   //await uploadPartsTokensMetadataForGameID(gameId);
   //const partsMints = await mint_parts_tokens(gameId);
@@ -244,99 +249,6 @@ async function mint_parts_tokens_without_metadata(gameId: anchor.BN) {
   console.log("Presents Bag Mint: ", presentsBagMint.toString());
 
   return { propulsionMint, landingGearMint, navigationMint, presentsBagMint };
-}
-
-async function init_bonkers_game(
-  gameId: anchor.BN,
-  coinMint: anchor.web3.PublicKey,
-  partsMints: {
-    propulsionMint: anchor.web3.PublicKey;
-    landingGearMint: anchor.web3.PublicKey;
-    navigationMint: anchor.web3.PublicKey;
-    presentsBagMint: anchor.web3.PublicKey;
-  }
-) {
-  const slot = await CONNECTION.getSlot();
-  const SLOTS_PER_MINUTE = 120;
-  const INTERVAL_IN_MINUTES = 3;
-
-  let gameSettings = {
-    gameId: gameId,
-    highestCurrentStake: new anchor.BN(0),
-    stage1Start: new anchor.BN(slot),
-    stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
-    lastRolled: new anchor.BN(0),
-    rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
-    coinMint: coinMint,
-    coinDecimals: 5,
-    sleighsBuilt: new anchor.BN(0),
-    sleighsRetired: new anchor.BN(0),
-    mintCostMultiplier: new anchor.BN(0),
-    propulsionPartsMint: partsMints.propulsionMint,
-    landingGearPartsMint: partsMints.landingGearMint,
-    navigationPartsMint: partsMints.navigationMint,
-    presentsBagPartsMint: partsMints.presentsBagMint,
-    prizePool: new anchor.BN(0),
-  };
-
-  console.log("Game Settings: ", JSON.stringify(gameSettings, null, 2));
-  let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("settings"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("game_rolls_stg1"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  let rollSTG2PDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("game_rolls_stg2"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  const ix = await BONKERS_PROGRAM.methods
-    .initBonkers(gameSettings)
-    .accounts({
-      admin: ADMIN_KEY.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
-      gameSettings: gameSettingsPDA,
-      gameRollsStg1: rollSTG1PDA,
-      gameRollsStg2: rollSTG2PDA,
-    })
-    .signers([ADMIN_KEY])
-    .instruction();
-
-  const { blockhash } = await CONNECTION.getLatestBlockhash();
-  const txMsg = new anchor.web3.TransactionMessage({
-    payerKey: ADMIN_KEY.publicKey,
-    recentBlockhash: blockhash,
-    instructions: [ix],
-  }).compileToLegacyMessage();
-  const tx = new anchor.web3.VersionedTransaction(txMsg);
-  tx.sign([ADMIN_KEY]);
-  await CONNECTION.sendRawTransaction(tx.serialize());
 }
 
 async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
@@ -579,4 +491,97 @@ async function mint_parts_tokens(gameId: anchor.BN): Promise<{
     navigationMint: new anchor.web3.PublicKey(resourceMints["navigation"]),
     presentsBagMint: new anchor.web3.PublicKey(resourceMints["presents_bag"]),
   };
+}
+
+async function init_bonkers_game(
+  gameId: anchor.BN,
+  coinMint: anchor.web3.PublicKey,
+  partsMints: {
+    propulsionMint: anchor.web3.PublicKey;
+    landingGearMint: anchor.web3.PublicKey;
+    navigationMint: anchor.web3.PublicKey;
+    presentsBagMint: anchor.web3.PublicKey;
+  }
+) {
+  const slot = await CONNECTION.getSlot();
+  const SLOTS_PER_MINUTE = 120;
+  const INTERVAL_IN_MINUTES = 3;
+
+  let gameSettings = {
+    gameId: gameId,
+    highestCurrentStake: new anchor.BN(0),
+    stage1Start: new anchor.BN(slot),
+    stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
+    lastRolled: new anchor.BN(0),
+    rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
+    coinMint: coinMint,
+    coinDecimals: 5,
+    sleighsBuilt: new anchor.BN(0),
+    sleighsRetired: new anchor.BN(0),
+    mintCostMultiplier: new anchor.BN(0),
+    propulsionPartsMint: partsMints.propulsionMint,
+    landingGearPartsMint: partsMints.landingGearMint,
+    navigationPartsMint: partsMints.navigationMint,
+    presentsBagPartsMint: partsMints.presentsBagMint,
+    prizePool: new anchor.BN(0),
+  };
+
+  console.log("Game Settings: ", JSON.stringify(gameSettings, null, 2));
+  let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("settings"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
+
+  let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("game_rolls_stg1"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
+
+  let rollSTG2PDA = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("game_rolls_stg2"),
+      Uint8Array.from(
+        serializeUint64(BigInt(gameId.toString()), {
+          endianess: ByteifyEndianess.BIG_ENDIAN,
+        })
+      ),
+    ],
+    BONKERS_KEY
+  )[0];
+
+  const ix = await BONKERS_PROGRAM.methods
+    .initBonkers(gameSettings)
+    .accounts({
+      admin: ADMIN_KEY.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+      gameSettings: gameSettingsPDA,
+      gameRollsStg1: rollSTG1PDA,
+      gameRollsStg2: rollSTG2PDA,
+    })
+    .signers([ADMIN_KEY])
+    .instruction();
+
+  const { blockhash } = await CONNECTION.getLatestBlockhash();
+  const txMsg = new anchor.web3.TransactionMessage({
+    payerKey: ADMIN_KEY.publicKey,
+    recentBlockhash: blockhash,
+    instructions: [ix],
+  }).compileToLegacyMessage();
+  const tx = new anchor.web3.VersionedTransaction(txMsg);
+  tx.sign([ADMIN_KEY]);
+  await CONNECTION.sendRawTransaction(tx.serialize());
 }
