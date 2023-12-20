@@ -33,7 +33,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-const gameId = new anchor.BN(5);
+const gameId = new anchor.BN(6);
 
 let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
   [
@@ -153,13 +153,15 @@ async function main() {
           });
           console.log(`Made a stage 2 roll at slot: ${currentSlot}`);
         }
-      } else {
-        await timeout(
-          gameSettings.lastRolled.toNumber() +
-            gameSettings.rollInterval.toNumber() -
-            currentSlot
-        );
       }
+
+      console.log("Roller sleeping til next timeout...");
+      await timeout(
+        gameSettings.lastRolled.toNumber() +
+          gameSettings.rollInterval.toNumber() -
+          currentSlot
+      );
+
       gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
         gameSettingsPDA
       );

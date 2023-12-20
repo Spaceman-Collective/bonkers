@@ -46,10 +46,10 @@ mintSPLTo(
 );
 */
 
-//debug();
+debug();
 
 async function debug() {
-  const gameId = new anchor.BN(5);
+  const gameId = new anchor.BN(6);
   let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from("settings"),
@@ -104,7 +104,7 @@ async function debug() {
 }
 
 async function main() {
-  const gameId = new anchor.BN(5);
+  const gameId = new anchor.BN(6);
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token -- just need to do it once and reuse it for all stuff
@@ -462,7 +462,7 @@ async function mint_parts_tokens(gameId: anchor.BN): Promise<{
         },
         body: JSON.stringify({
           network: "devnet",
-          wallet: mintAuthorityPDA.toString(),
+          wallet_address: mintAuthorityPDA.toString(),
           fee_payer: ADMIN_KEY.publicKey.toString(),
           metadata_uri: `https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/${resource}-${gameId.toString()}.json`,
           decimals: 0,
@@ -511,7 +511,7 @@ async function init_bonkers_game(
     gameId: gameId,
     highestCurrentStake: new anchor.BN(0),
     stage1Start: new anchor.BN(slot),
-    stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
+    stage1End: new anchor.BN(slot + 120 * SLOTS_PER_MINUTE),
     lastRolled: new anchor.BN(0),
     rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
     coinMint: coinMint,

@@ -34,7 +34,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   BONKERS_KEY,
   { connection: CONNECTION }
 );
-const gameId = new anchor.BN(5);
+const gameId = new anchor.BN(6);
 const rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
   [
     Buffer.from("game_rolls_stg1"),
@@ -92,6 +92,7 @@ async function main() {
         },
       },
     ]);
+    console.log("Sleighs found: ", sleighs.length);
 
     const currentSlot = await CONNECTION.getSlot();
 
@@ -203,6 +204,7 @@ async function main() {
           2
       );
     }
+    console.log("Sleeping for interval and checking sleighs again...");
     // sleep for interval and check sleighs again
     await timeout(
       (currentSlot % gameSettings.stage1Start.toNumber()) -
