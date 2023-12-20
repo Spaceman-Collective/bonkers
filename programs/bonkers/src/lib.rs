@@ -243,6 +243,10 @@ pub mod bonkers {
             return err!(BonkersError::SleighBroken);
         }
 
+        if sleigh.built_index == 0 {
+            return err!(BonkersError::SleighNotBuilt);
+        }
+
         // Get the next Roll to process
         let roll_idx: u64;
         // prevents us from skipping roll 0

@@ -41,7 +41,13 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
 /*
 mintSPLTo(
   new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
-  new anchor.web3.PublicKey("3qwLncThxr13nFMeEANUV8ZR1V6ndQo3F7ky36LwDXhf"),
+  new anchor.web3.PublicKey("6TK6Ti87CFdYHeXjYvXxn6bFxWGyBqW7QuuLFiGwztoj"),
+  BigInt(100000000000)
+);
+
+mintSPLTo(
+  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
+  new anchor.web3.PublicKey("3yQ3RSwnh94D7t3wtbb7kNEEH4hmCPfwckQwLVrdgF1w"),
   BigInt(100000000000)
 );
 */
@@ -49,7 +55,7 @@ mintSPLTo(
 debug();
 
 async function debug() {
-  const gameId = new anchor.BN(6);
+  const gameId = new anchor.BN(process.env.GAME_ID!);
   let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from("settings"),
@@ -100,19 +106,26 @@ async function debug() {
   );
 
   console.log(
-    "Number of Rolls that should've happened: ",
+    "Number of Rolls that should've happened in stage 1: ",
     (currentSlot - gameSettings.stage1Start.toNumber()) /
       gameSettings.rollInterval.toNumber()
   );
   const rolls1 = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG1PDA);
-  console.log("Roll 1 rolls: ", rolls1.rolls.length);
+  console.log("STG 1 rolls: ", rolls1.rolls.length);
   console.log(rolls1.rolls);
 
-  //console.log(await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA));
+  console.log(
+    "Number of Rolls that should've happened in stage 2: ",
+    (currentSlot - gameSettings.stage1End.toNumber()) /
+      gameSettings.rollInterval.toNumber()
+  );
+  const rolls2 = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA);
+  console.log("STG 2 rolls: ", rolls2.rolls.length);
+  console.log(rolls2.rolls);
 }
 
 async function main() {
-  const gameId = new anchor.BN(6);
+  const gameId = new anchor.BN(process.env.GAME_ID!);
 
   // Assume Bonkers program is deployed to local validator with ADMIN key
   // Create Bonk Token -- just need to do it once and reuse it for all stuff
@@ -492,13 +505,13 @@ async function init_bonkers_game(
 ) {
   const slot = await CONNECTION.getSlot();
   const SLOTS_PER_MINUTE = 120;
-  const INTERVAL_IN_MINUTES = 3;
+  const INTERVAL_IN_MINUTES = 1;
 
   let gameSettings = {
     gameId: gameId,
     highestCurrentStake: new anchor.BN(0),
     stage1Start: new anchor.BN(slot),
-    stage1End: new anchor.BN(slot + 120 * SLOTS_PER_MINUTE),
+    stage1End: new anchor.BN(slot + 10 * SLOTS_PER_MINUTE),
     lastRolled: new anchor.BN(0),
     rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
     coinMint: coinMint,

@@ -33,7 +33,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-const gameId = new anchor.BN(6);
+const gameId = new anchor.BN(process.env.GAME_ID!);
 
 let gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
   [

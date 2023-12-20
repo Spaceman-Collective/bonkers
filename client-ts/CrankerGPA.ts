@@ -34,7 +34,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   BONKERS_KEY,
   { connection: CONNECTION }
 );
-const gameId = new anchor.BN(6);
+const gameId = new anchor.BN(process.env.GAME_ID!);
 const rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
   [
     Buffer.from("game_rolls_stg1"),
@@ -148,12 +148,25 @@ async function main() {
       let roll2Acc = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA);
       Promise.all(
         sleighs.map(async (sleigh) => {
+          if (sleigh.account.builtIndex.eq(new anchor.BN(0))) {
+            return;
+          }
+
+          if (sleigh.account.broken) {
+            return;
+          }
+
+          if (roll2Acc.rolls.length == 0) {
+            return;
+          }
+
           if (
-            (roll2Acc.rolls.length > 0 &&
-              sleigh.account.lastDeliveryRoll.toString() ==
-                "18446744073709552000") ||
-            new anchor.BN(roll2Acc.rolls.length) >
-              sleigh.account.lastDeliveryRoll.add(new anchor.BN(2))
+            sleigh.account.lastDeliveryRoll.eq(
+              new anchor.BN("18446744073709552000")
+            ) ||
+            sleigh.account.lastDeliveryRoll.lt(
+              new anchor.BN(roll2Acc.rolls.length + 2)
+            )
           ) {
             // Crank this sleigh
             const propulsionATA = spl.getAssociatedTokenAddressSync(
