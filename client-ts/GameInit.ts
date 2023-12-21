@@ -36,7 +36,14 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-//main();
+main();
+
+// AP
+mintSPLTo(
+  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
+  new anchor.web3.PublicKey("3qwLncThxr13nFMeEANUV8ZR1V6ndQo3F7ky36LwDXhf"),
+  BigInt(100000000000)
+);
 
 /*
 mintSPLTo(
@@ -52,7 +59,7 @@ mintSPLTo(
 );
 */
 
-debug();
+// debug();
 
 async function debug() {
   const gameId = new anchor.BN(process.env.GAME_ID!);
