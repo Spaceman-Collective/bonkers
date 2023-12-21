@@ -7,13 +7,14 @@ pub trait MaxSize {
 #[account]
 pub struct GameSettings {
     pub game_id: u64,                    // random id for the game
-    pub highest_current_stake: u64,      // Used in Stage 1 to determine roll max
+    pub total_stake: u64,                // Used in Stage 1 to determine roll max
     pub stage1_start: u64,               // Slot number when stage 1 starts
     pub stage1_end: u64,                 // Slot Number when no more stake is allowed to be put in.
     pub last_rolled: u64,                // last time a roll was preformed
     pub roll_interval: u64, // last_rolled + roll_interval is when next roll should take place
     pub coin_mint: Pubkey,  // the coin (Bonk on mainnet) which is used to do all transactions
     pub coin_decimals: u8,  // number of decimals the coin has
+    pub sleighs_staked: u64, // total sleighs staked
     pub sleighs_built: u64, // total number of sleighs built
     pub sleighs_retired: u64, // total number of sleighs retired. game is over when this equals built
     pub mint_cost_multiplier: u64, // sleighs_built*mint_cost_multiplier = cost for next stake

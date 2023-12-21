@@ -149,14 +149,21 @@ async function main() {
       Promise.all(
         sleighs.map(async (sleigh) => {
           if (sleigh.account.builtIndex.eq(new anchor.BN(0))) {
+            console.log(
+              `Sleigh ${sleigh.account.sleighId.toString()} is not built.`
+            );
             return;
           }
 
           if (sleigh.account.broken) {
+            console.log(
+              `Sleigh ${sleigh.account.sleighId.toString()} is broken.`
+            );
             return;
           }
 
           if (roll2Acc.rolls.length == 0) {
+            console.log("No rolls to process.");
             return;
           }
 

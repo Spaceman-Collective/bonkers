@@ -27,7 +27,7 @@ pub mod bonkers {
      */
     pub fn init_bonkers(ctx: Context<InitBonkers>, init: GameSettings) -> Result<()> {
         ctx.accounts.game_settings.game_id = init.game_id;
-        ctx.accounts.game_settings.highest_current_stake = 0;
+        ctx.accounts.game_settings.total_stake = 0;
         ctx.accounts.game_settings.stage1_start = init.stage1_start;
         ctx.accounts.game_settings.stage1_end = init.stage1_end;
         ctx.accounts.game_settings.last_rolled = init.stage1_start;
@@ -35,6 +35,8 @@ pub mod bonkers {
         ctx.accounts.game_settings.coin_mint = init.coin_mint;
         ctx.accounts.game_settings.coin_decimals = init.coin_decimals;
         ctx.accounts.game_settings.sleighs_built = 0;
+        ctx.accounts.game_settings.sleighs_retired = 0;
+        ctx.accounts.game_settings.sleighs_staked = 0;
         ctx.accounts.game_settings.mint_cost_multiplier = init.mint_cost_multiplier;
         ctx.accounts.game_settings.propulsion_parts_mint = init.propulsion_parts_mint;
         ctx.accounts.game_settings.landing_gear_parts_mint = init.landing_gear_parts_mint;
@@ -66,7 +68,13 @@ pub mod bonkers {
         }
 
         // Roll a number based on highest stake
-        let random_number = get_random_u64(2 * game_settings.highest_current_stake + 1);
+        let random_number;
+        if game_settings.sleighs_staked == 0 {
+            random_number = 1;
+        } else {
+            random_number =
+                get_random_u64(8 * game_settings.total_stake / game_settings.sleighs_staked);
+        }
 
         // Store to rolls
         ctx.accounts.game_rolls.rolls.push(random_number);
@@ -114,10 +122,9 @@ pub mod bonkers {
             game_settings.coin_decimals,
         )?;
 
-        // Update Game Settings PDA with highest current stake if applicable
-        if stake_amt > game_settings.highest_current_stake {
-            game_settings.highest_current_stake = stake_amt
-        }
+        // Update Game Settings PDA with total current stake if applicable
+        game_settings.sleighs_staked += 1;
+        game_settings.total_stake += stake_amt;
 
         // Create Sleigh account
         let sleigh = &mut ctx.accounts.sleigh;
