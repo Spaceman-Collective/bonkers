@@ -27,7 +27,7 @@ pub struct GameSettings {
 
 impl MaxSize for GameSettings {
     fn get_max_size() -> usize {
-        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8;
+        return 8 + 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8;
     }
 }
 

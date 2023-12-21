@@ -48,12 +48,12 @@ async function main() {
   ); //await create_bonk_mint(gameId);
 
   // Create Parts Tokens and assign Mint auth to Game Settings
-  //await uploadPartsTokensMetadataForGameID(gameId);
-  //const partsMints = await mint_parts_tokens(gameId);
-  const partsMints = await mint_parts_tokens_without_metadata(gameId);
+  await uploadPartsTokensMetadataForGameID(gameId);
+  const partsMints = await mint_parts_tokens(gameId);
+  //const partsMints = await mint_parts_tokens_without_metadata(gameId);
 
   // Initalize Bonkers Game
-  await init_bonkers_game(gameId, coinMint, partsMints);
+  //await init_bonkers_game(gameId, coinMint, partsMints);
 }
 
 async function create_bonk_mint(gameId: anchor.BN) {
