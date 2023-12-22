@@ -4,6 +4,7 @@ import * as spl from "@solana/spl-token";
 import { serializeUint64, ByteifyEndianess } from "byteify";
 import { ShadowFile, ShdwDrive } from "@shadow-drive/sdk";
 import fetch from "node-fetch";
+import { Metaplex } from "@metaplex-foundation/js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -17,6 +18,7 @@ const CONNECTION = new anchor.web3.Connection(
   "confirmed"
 );
 const SHDW_BUCKET = "HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m";
+const metaplex = new Metaplex(CONNECTION);
 
 // 1. Load Admin Key
 const ADMIN_KEY = anchor.web3.Keypair.fromSecretKey(
@@ -36,8 +38,13 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-main();
+/* mintSPLTo(
+  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
+  new anchor.web3.PublicKey("9N5cqQBpVzKF1Dqwu42YByLRC3Ck2BmjrwE2RxDsBw5M"),
+  BigInt(10000000000000)
+); */
 
+main();
 async function main() {
   const gameId = new anchor.BN(process.env.GAME_ID!);
 
@@ -48,12 +55,12 @@ async function main() {
   ); //await create_bonk_mint(gameId);
 
   // Create Parts Tokens and assign Mint auth to Game Settings
-  await uploadPartsTokensMetadataForGameID(gameId);
-  const partsMints = await mint_parts_tokens(gameId);
-  //const partsMints = await mint_parts_tokens_without_metadata(gameId);
+  //await uploadPartsTokensMetadataForGameID(gameId);
+  //const partsMints = await mint_parts_tokens(gameId);
+  const partsMints = await mint_parts_tokens_without_metadata(gameId);
 
   // Initalize Bonkers Game
-  //await init_bonkers_game(gameId, coinMint, partsMints);
+  await init_bonkers_game(gameId, coinMint, partsMints);
 }
 
 async function create_bonk_mint(gameId: anchor.BN) {
@@ -392,7 +399,13 @@ async function mint_parts_tokens(gameId: anchor.BN): Promise<{
       const tx = anchor.web3.Transaction.from(
         Buffer.from(response.result.encoded_transaction, "base64")
       );
+      console.log(
+        Buffer.from(tx.serialize({ verifySignatures: false })).toString(
+          "base64"
+        )
+      );
       tx.partialSign(ADMIN_KEY);
+      console.log(Buffer.from(tx.serialize()).toString("base64"));
       const sig = await CONNECTION.sendRawTransaction(tx.serialize());
       console.log(`${resource} Mint tx: ${sig}`);
       resourceMints[resource] = response.result.mint;
@@ -425,14 +438,14 @@ async function init_bonkers_game(
     gameId: gameId,
     highestCurrentStake: new anchor.BN(0),
     stage1Start: new anchor.BN(slot),
-    stage1End: new anchor.BN(slot + 10 * SLOTS_PER_MINUTE),
+    stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
     lastRolled: new anchor.BN(0),
     rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
     coinMint: coinMint,
     coinDecimals: 5,
     sleighsBuilt: new anchor.BN(0),
     sleighsRetired: new anchor.BN(0),
-    mintCostMultiplier: new anchor.BN(0),
+    mintCostMultiplier: new anchor.BN(250_000_00000),
     propulsionPartsMint: partsMints.propulsionMint,
     landingGearPartsMint: partsMints.landingGearMint,
     navigationPartsMint: partsMints.navigationMint,

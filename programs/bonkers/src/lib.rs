@@ -73,7 +73,7 @@ pub mod bonkers {
             random_number = 1;
         } else {
             random_number =
-                get_random_u64(8 * game_settings.total_stake / game_settings.sleighs_staked);
+                get_random_u64(5 * game_settings.total_stake / game_settings.sleighs_staked);
         }
 
         // Store to rolls

@@ -42,12 +42,6 @@ mintSPLTo(
   new anchor.web3.PublicKey("6TK6Ti87CFdYHeXjYvXxn6bFxWGyBqW7QuuLFiGwztoj"),
   BigInt(100000000000)
 );
-
-mintSPLTo(
-  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
-  new anchor.web3.PublicKey("3yQ3RSwnh94D7t3wtbb7kNEEH4hmCPfwckQwLVrdgF1w"),
-  BigInt(100000000000)
-);
 */
 
 debug();
