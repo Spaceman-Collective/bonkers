@@ -146,6 +146,7 @@ async function main() {
     } else if (currentSlot > gameSettings.stage1End.toNumber()) {
       // stage 2
       let roll2Acc = await BONKERS_PROGRAM.account.gameRolls.fetch(rollSTG2PDA);
+      const { blockhash } = await CONNECTION.getLatestBlockhash();
       Promise.all(
         sleighs.map(async (sleigh) => {
           if (sleigh.account.builtIndex.eq(new anchor.BN(0))) {
@@ -168,8 +169,8 @@ async function main() {
           }
 
           if (
-            sleigh.account.lastDeliveryRoll.eq(
-              new anchor.BN("18446744073709552000")
+            sleigh.account.lastDeliveryRoll.gt(
+              new anchor.BN("1844674407370955200")
             ) ||
             sleigh.account.lastDeliveryRoll.lt(
               new anchor.BN(roll2Acc.rolls.length + 2)
@@ -210,7 +211,6 @@ async function main() {
                 tokenProgram: spl.TOKEN_PROGRAM_ID,
               })
               .instruction();
-            const { blockhash } = await CONNECTION.getLatestBlockhash();
             const txMsg = new anchor.web3.TransactionMessage({
               payerKey: ADMIN_KEY.publicKey,
               recentBlockhash: blockhash,
@@ -225,6 +225,8 @@ async function main() {
             console.log(
               `Cranked ${sleigh.account.sleighId.toString()} in Stage 2`
             );
+          } else {
+            console.log("Something went wrong processing...");
           }
         })
       );

@@ -44,17 +44,7 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   BigInt(10000000000000)
 ); */
 
-<<<<<<< HEAD
 main();
-=======
-// AP
-mintSPLTo(
-  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
-  new anchor.web3.PublicKey("3qwLncThxr13nFMeEANUV8ZR1V6ndQo3F7ky36LwDXhf"),
-  BigInt(100000000000)
-);
-
->>>>>>> e64b9307f1d8a0d2facf6052803c32d7bba1e5ec
 async function main() {
   const gameId = new anchor.BN(process.env.GAME_ID!);
 
@@ -65,13 +55,8 @@ async function main() {
   ); //await create_bonk_mint(gameId);
 
   // Create Parts Tokens and assign Mint auth to Game Settings
-<<<<<<< HEAD
   //await uploadPartsTokensMetadataForGameID(gameId);
   //const partsMints = await mint_parts_tokens(gameId);
-=======
-  // await uploadPartsTokensMetadataForGameID(gameId);
-  // const partsMints = await mint_parts_tokens(gameId);
->>>>>>> e64b9307f1d8a0d2facf6052803c32d7bba1e5ec
   const partsMints = await mint_parts_tokens_without_metadata(gameId);
 
   // Initalize Bonkers Game
