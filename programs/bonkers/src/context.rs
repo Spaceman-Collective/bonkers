@@ -320,7 +320,6 @@ pub struct Retire<'info>{
     pub system_program: Program<'info, System>,
     #[account(
         mut,
-        close = sleigh_owner,
     )]
     pub sleigh: Account<'info, Sleigh>,
     #[account(

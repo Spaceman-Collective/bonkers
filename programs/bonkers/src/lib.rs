@@ -593,7 +593,7 @@ pub mod bonkers {
             )?;
         } else {
             // return 70%(stake-mintcost) + spoils + prize pool
-            let base_return = (sleigh.stake_amt - sleigh.mint_cost) * (70 / 100);
+            let base_return = ((sleigh.stake_amt - sleigh.mint_cost) * 70) / 100_u64;
             let spoils = (game_settings.sleighs_built - sleigh.built_index)
                 * game_settings.mint_cost_multiplier;
             let mut prize_pool: u64 = 0;
@@ -602,7 +602,7 @@ pub mod bonkers {
                 prize_pool = game_settings.prize_pool
             } else {
                 // if not the last sleigh, add 20% of it's stake amount to prize pool
-                game_settings.prize_pool += (sleigh.stake_amt - sleigh.mint_cost) * (20 / 100)
+                game_settings.prize_pool += ((sleigh.stake_amt - sleigh.mint_cost) * 20) / 100_u64
             }
 
             let returned_coin = base_return + spoils + prize_pool;
@@ -620,7 +620,7 @@ pub mod bonkers {
                 returned_coin,
                 game_settings.coin_decimals,
             )?;
-
+            sleigh.close(ctx.accounts.sleigh_owner.to_account_info())?;
             game_settings.sleighs_retired += 1;
         }
 
