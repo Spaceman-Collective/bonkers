@@ -598,6 +598,10 @@ pub mod bonkers {
                 * game_settings.mint_cost_multiplier;
             let mut prize_pool: u64 = 0;
             if game_settings.sleighs_retired + 1 == game_settings.sleighs_built {
+                msg!(
+                    "Last sleigh in game! Awarding Prize Pool {:#}",
+                    game_settings.prize_pool
+                );
                 // if this is the last sleigh, then give it the prize pool
                 prize_pool = game_settings.prize_pool
             } else {
@@ -606,6 +610,12 @@ pub mod bonkers {
             }
 
             let returned_coin = base_return + spoils + prize_pool;
+            msg!(
+                "Returning {:#} base, {:#} spoils, and {:#} prize pool",
+                base_return,
+                spoils,
+                prize_pool
+            );
             transfer_checked(
                 CpiContext::new_with_signer(
                     ctx.accounts.token_program.to_account_info(),
