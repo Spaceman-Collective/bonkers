@@ -266,7 +266,7 @@ pub struct Repair<'info>{
     
     #[account(
         mut,
-        constraint = (sleigh_propulsion_parts_ata.mint == game_settings.propulsion_parts_mint) && (sleigh_navigation_parts_ata.owner == sleigh.owner)
+        constraint = (sleigh_propulsion_parts_ata.mint == game_settings.propulsion_parts_mint) && (sleigh_propulsion_parts_ata.owner == sleigh.owner)
     )]
     pub sleigh_propulsion_parts_ata: Account<'info, TokenAccount>,
 

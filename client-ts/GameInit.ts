@@ -38,11 +38,13 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-/* mintSPLTo(
+/*
+mintSPLTo(
   new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
-  new anchor.web3.PublicKey("9N5cqQBpVzKF1Dqwu42YByLRC3Ck2BmjrwE2RxDsBw5M"),
+  new anchor.web3.PublicKey("BFTG9fGEdX8z2Hb8sTpuE2exAGZ154YMWXJt6LmqstDA"),
   BigInt(10000000000000)
-); */
+);
+*/
 
 main();
 async function main() {
@@ -432,13 +434,14 @@ async function init_bonkers_game(
 ) {
   const slot = await CONNECTION.getSlot();
   const SLOTS_PER_MINUTE = 120;
-  const INTERVAL_IN_MINUTES = 1;
+  const INTERVAL_IN_MINUTES = 10;
+  const STAGE1_LEN_MIN = 720;
 
   let gameSettings = {
     gameId: gameId,
     highestCurrentStake: new anchor.BN(0),
     stage1Start: new anchor.BN(slot),
-    stage1End: new anchor.BN(slot + 60 * SLOTS_PER_MINUTE),
+    stage1End: new anchor.BN(slot + STAGE1_LEN_MIN * SLOTS_PER_MINUTE), //12 hours
     lastRolled: new anchor.BN(0),
     rollInterval: new anchor.BN(INTERVAL_IN_MINUTES * SLOTS_PER_MINUTE),
     coinMint: coinMint,
