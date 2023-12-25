@@ -1,6 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::*;
 use anchor_spl::token::{burn, mint_to, transfer_checked, Burn, MintTo, TransferChecked};
+use mpl_token_metadata::instructions::{
+    CreateMetadataAccountV3Cpi, CreateMetadataAccountV3CpiAccounts,
+    CreateMetadataAccountV3InstructionArgs,
+};
+use mpl_token_metadata::types::DataV2;
 
 declare_id!("DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F");
 
@@ -43,6 +48,139 @@ pub mod bonkers {
         ctx.accounts.game_settings.navigation_parts_mint = init.navigation_parts_mint;
         ctx.accounts.game_settings.presents_bag_parts_mint = init.presents_bag_parts_mint;
         ctx.accounts.game_settings.prize_pool = 0;
+
+        let game_id_bytes = init.game_id.to_be_bytes();
+        let game_setting_seeds: &[&[u8]] = &[
+            PREFIX_GAME_SETTINGS,
+            game_id_bytes.as_ref(),
+            &[ctx.bumps.game_settings],
+        ];
+        let signers_seeds = &[game_setting_seeds];
+
+        CreateMetadataAccountV3Cpi::new(
+            &ctx.accounts.mpl_program.to_account_info(),
+            CreateMetadataAccountV3CpiAccounts {
+                payer: &ctx.accounts.admin.to_account_info(),
+                metadata: &ctx.accounts.propulsion_metadata.to_account_info(),
+                mint: &ctx.accounts.propulsion_mint.to_account_info(),
+                mint_authority: &ctx.accounts.game_settings.to_account_info(),
+                update_authority: (&ctx.accounts.game_settings.to_account_info(), false),
+                system_program: &ctx.accounts.system_program.to_account_info(),
+                rent: Some(&ctx.accounts.rent_account.to_account_info()),
+            },
+            CreateMetadataAccountV3InstructionArgs {
+                data: DataV2 {
+                    name: format!("({}) Propulsion Parts", init.game_id.to_string()),
+                    symbol: "BNKRS".to_string(),
+                    seller_fee_basis_points: 0,
+                    creators: None,
+                    uri: format!(
+                        "{}/propulsion-{}.json",
+                        SHDW_BASE_URL,
+                        init.game_id.to_string()
+                    ),
+                    collection: None,
+                    uses: None,
+                },
+                is_mutable: false,
+                collection_details: None,
+            },
+        )
+        .invoke_signed(signers_seeds)?;
+
+        CreateMetadataAccountV3Cpi::new(
+            &ctx.accounts.mpl_program.to_account_info(),
+            CreateMetadataAccountV3CpiAccounts {
+                payer: &ctx.accounts.admin.to_account_info(),
+                metadata: &ctx.accounts.landing_gear_metadata.to_account_info(),
+                mint: &ctx.accounts.landing_gear_mint.to_account_info(),
+                mint_authority: &ctx.accounts.game_settings.to_account_info(),
+                update_authority: (&ctx.accounts.game_settings.to_account_info(), false),
+                system_program: &ctx.accounts.system_program.to_account_info(),
+                rent: Some(&ctx.accounts.rent_account.to_account_info()),
+            },
+            CreateMetadataAccountV3InstructionArgs {
+                data: DataV2 {
+                    name: format!("({}) Landing Gear Parts", init.game_id.to_string()),
+                    symbol: "BNKRS".to_string(),
+                    seller_fee_basis_points: 0,
+                    creators: None,
+                    uri: format!(
+                        "{}/landing_gear-{}.json",
+                        SHDW_BASE_URL,
+                        init.game_id.to_string()
+                    ),
+                    collection: None,
+                    uses: None,
+                },
+                is_mutable: false,
+                collection_details: None,
+            },
+        )
+        .invoke_signed(signers_seeds)?;
+
+        CreateMetadataAccountV3Cpi::new(
+            &ctx.accounts.mpl_program.to_account_info(),
+            CreateMetadataAccountV3CpiAccounts {
+                payer: &ctx.accounts.admin.to_account_info(),
+                metadata: &ctx.accounts.navigation_metadata.to_account_info(),
+                mint: &ctx.accounts.navigation_mint.to_account_info(),
+                mint_authority: &ctx.accounts.game_settings.to_account_info(),
+                update_authority: (&ctx.accounts.game_settings.to_account_info(), false),
+                system_program: &ctx.accounts.system_program.to_account_info(),
+                rent: Some(&ctx.accounts.rent_account.to_account_info()),
+            },
+            CreateMetadataAccountV3InstructionArgs {
+                data: DataV2 {
+                    name: format!("({}) Navigation Parts", init.game_id.to_string()),
+                    symbol: "BNKRS".to_string(),
+                    seller_fee_basis_points: 0,
+                    creators: None,
+                    uri: format!(
+                        "{}/navigation-{}.json",
+                        SHDW_BASE_URL,
+                        init.game_id.to_string()
+                    ),
+                    collection: None,
+                    uses: None,
+                },
+                is_mutable: false,
+                collection_details: None,
+            },
+        )
+        .invoke_signed(signers_seeds)?;
+
+        CreateMetadataAccountV3Cpi::new(
+            &ctx.accounts.mpl_program.to_account_info(),
+            CreateMetadataAccountV3CpiAccounts {
+                payer: &ctx.accounts.admin.to_account_info(),
+                metadata: &ctx.accounts.presents_bag_metadata.to_account_info(),
+                mint: &ctx.accounts.presents_bag_mint.to_account_info(),
+                mint_authority: &ctx.accounts.game_settings.to_account_info(),
+                update_authority: (&ctx.accounts.game_settings.to_account_info(), false),
+                system_program: &ctx.accounts.system_program.to_account_info(),
+                rent: Some(&ctx.accounts.rent_account.to_account_info()),
+            },
+            CreateMetadataAccountV3InstructionArgs {
+                data: DataV2 {
+                    name: format!("({}) Presents Bag Parts", init.game_id.to_string()),
+                    symbol: "BNKRS".to_string(),
+                    seller_fee_basis_points: 0,
+                    creators: None,
+                    uri: format!(
+                        "{}/presents_bag-{}.json",
+                        SHDW_BASE_URL,
+                        init.game_id.to_string()
+                    ),
+                    collection: None,
+                    uses: None,
+                },
+                is_mutable: false,
+                collection_details: None,
+            },
+        )
+        .invoke_signed(signers_seeds)?;
+
         Ok(())
     }
 
@@ -257,7 +395,7 @@ pub mod bonkers {
         // Get the next Roll to process
         let roll_idx: u64;
         // prevents us from skipping roll 0
-        if sleigh.last_delivery_roll == u64::MAX {
+        if sleigh.last_delivery_roll >= u32::MAX as u64 {
             roll_idx = 0;
             sleigh.last_delivery_roll = 0;
         } else {
@@ -273,13 +411,8 @@ pub mod bonkers {
 
         // Confirm Malfunction
         // Check if the Sleigh was damaged
-        // range of selection starts at 1% and grows by 1% every roll interval
-        let mut range_of_selection =
-            ((1 + sleigh.last_delivery_roll) / 100) * game_settings.sleighs_built;
-
-        if range_of_selection > 100 {
-            range_of_selection = 100;
-        }
+        let range_of_selection =
+            (sleigh.last_delivery_roll.wrapping_add(1)) * game_settings.sleighs_built;
 
         // Check which parts were damaged
         // this picks a random number between 0 and total number of slieghs
@@ -291,6 +424,9 @@ pub mod bonkers {
         let mut overflow_range: u64 = 0;
         if end_range > game_settings.sleighs_built {
             overflow_range = end_range - game_settings.sleighs_built;
+            if overflow_range > game_settings.sleighs_built {
+                overflow_range = game_settings.sleighs_built;
+            }
             end_range = game_settings.sleighs_built;
         }
 

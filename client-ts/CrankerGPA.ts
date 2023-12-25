@@ -169,9 +169,7 @@ async function main() {
           }
 
           if (
-            sleigh.account.lastDeliveryRoll.gt(
-              new anchor.BN("1844674407370955200")
-            ) ||
+            sleigh.account.lastDeliveryRoll.gt(new anchor.BN("184467440737")) ||
             sleigh.account.lastDeliveryRoll.lt(
               new anchor.BN(roll2Acc.rolls.length + 2)
             )

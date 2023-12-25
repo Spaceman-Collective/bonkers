@@ -59,7 +59,7 @@ async function debug() {
     ],
     BONKERS_KEY
   )[0];
-
+  console.log(gameSettingsPDA.toString());
   let rollSTG1PDA = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from("game_rolls_stg1"),

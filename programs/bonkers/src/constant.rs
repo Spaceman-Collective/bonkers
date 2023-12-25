@@ -11,3 +11,5 @@ pub const ADMIN_ADDRESS: Pubkey = Pubkey::new_from_array([
 ]); // BnKRsvhxmjnvpt7kGFLgBUgRT7NL2hJQzmvxSut4Lg5s
 
 pub const BASE_RESOURCE_DRIP: u64 = 100;
+pub const SHDW_BASE_URL: &str =
+    "https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m";

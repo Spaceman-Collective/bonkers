@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use mpl_token_metadata::ID as MPL_ID;
 
 use crate::account::*;
 use crate::constant::*;
@@ -50,6 +51,33 @@ pub struct InitBonkers<'info> {
         bump,
     )]
     pub game_rolls_stg2: Account<'info, GameRolls>,
+
+
+    // Mint Creations
+    /// CHECK: should be metadata program
+    #[account(
+        address = MPL_ID
+    )]
+    pub mpl_program: UncheckedAccount<'info>,
+    pub propulsion_mint: Account<'info, Mint>,
+    pub landing_gear_mint: Account<'info, Mint>,
+    pub navigation_mint: Account<'info, Mint>,
+    pub presents_bag_mint: Account<'info, Mint>,
+
+    /// CHECK: Metadata program will do check
+    #[account(mut)]
+    pub propulsion_metadata: UncheckedAccount<'info>,
+    /// CHECK: Metadata program will do check
+    #[account(mut)]
+    pub landing_gear_metadata: UncheckedAccount<'info>,
+    /// CHECK: Metadata program will do check
+    #[account(mut)]
+    pub navigation_metadata: UncheckedAccount<'info>,
+    /// CHECK: Metadata program will do check
+    #[account(mut)]
+    pub presents_bag_metadata: UncheckedAccount<'info>,
+
+    pub rent_account: Sysvar<'info, Rent>,
 }
 
 #[derive(Accounts)]

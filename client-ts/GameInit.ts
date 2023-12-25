@@ -3,13 +3,13 @@ import { readFileSync } from "fs";
 import * as spl from "@solana/spl-token";
 import { serializeUint64, ByteifyEndianess } from "byteify";
 import { ShadowFile, ShdwDrive } from "@shadow-drive/sdk";
-import fetch from "node-fetch";
-import { Metaplex } from "@metaplex-foundation/js";
 import dotenv from "dotenv";
 dotenv.config();
-
 import { Bonkers } from "../target/types/bonkers";
 const bonkersIDL = require("../target/idl/bonkers.json");
+const metaplexID = new anchor.web3.PublicKey(
+  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+);
 const BONKERS_KEY = new anchor.web3.PublicKey(
   "DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F"
 );
@@ -18,7 +18,6 @@ const CONNECTION = new anchor.web3.Connection(
   "confirmed"
 );
 const SHDW_BUCKET = "HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m";
-const metaplex = new Metaplex(CONNECTION);
 
 // 1. Load Admin Key
 const ADMIN_KEY = anchor.web3.Keypair.fromSecretKey(
@@ -57,7 +56,7 @@ async function main() {
   ); //await create_bonk_mint(gameId);
 
   // Create Parts Tokens and assign Mint auth to Game Settings
-  //await uploadPartsTokensMetadataForGameID(gameId);
+  await uploadPartsTokensMetadataForGameID(gameId);
   //const partsMints = await mint_parts_tokens(gameId);
   const partsMints = await mint_parts_tokens_without_metadata(gameId);
 
@@ -176,7 +175,7 @@ async function mint_parts_tokens_without_metadata(gameId: anchor.BN) {
 
 async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   const propulsionMetadata = {
-    name: `Propulsion Parts - ${gameId.toString()}`,
+    name: `(${gameId.toString()}) Propulsion Parts`,
     symbol: "BNKRS",
     description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
@@ -212,7 +211,7 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   };
 
   const landingGearMetadata = {
-    name: `Landing Gear Parts - ${gameId.toString()}`,
+    name: `(${gameId.toString()}) Landing Gear Parts`,
     symbol: "BNKRS",
     description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
@@ -248,7 +247,7 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   };
 
   const navigationMetadata = {
-    name: `Navigation Parts - ${gameId.toString()}`,
+    name: `(${gameId.toString()}) Navigation Parts`,
     symbol: "BNKRS",
     description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
@@ -284,7 +283,7 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   };
 
   const presentsBagMetadata = {
-    name: `Presents Bag Parts - ${gameId.toString()}`,
+    name: `(${gameId.toString()}) Presents Bag Parts`,
     symbol: "BNKRS",
     description: `Sleigh parts given as a reward for completing deliveries in game ${gameId.toString()} of It's Bonkers!`,
     image:
@@ -352,6 +351,7 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   return response;
 }
 
+/*
 async function mint_parts_tokens(gameId: anchor.BN): Promise<{
   propulsionMint: anchor.web3.PublicKey;
   landingGearMint: anchor.web3.PublicKey;
@@ -421,6 +421,7 @@ async function mint_parts_tokens(gameId: anchor.BN): Promise<{
     presentsBagMint: new anchor.web3.PublicKey(resourceMints["presents_bag"]),
   };
 }
+*/
 
 async function init_bonkers_game(
   gameId: anchor.BN,
@@ -434,8 +435,8 @@ async function init_bonkers_game(
 ) {
   const slot = await CONNECTION.getSlot();
   const SLOTS_PER_MINUTE = 120;
-  const INTERVAL_IN_MINUTES = 10;
-  const STAGE1_LEN_MIN = 720; // 12 hours
+  const INTERVAL_IN_MINUTES = 1;
+  const STAGE1_LEN_MIN = 10; // 12 hours
 
   let gameSettings = {
     gameId: gameId,
@@ -501,6 +502,42 @@ async function init_bonkers_game(
     BONKERS_KEY
   )[0];
 
+  const propulsion_metadata = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      metaplexID.toBuffer(),
+      partsMints.propulsionMint.toBuffer(),
+    ],
+    metaplexID
+  )[0];
+
+  const navigation_metadata = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      metaplexID.toBuffer(),
+      partsMints.navigationMint.toBuffer(),
+    ],
+    metaplexID
+  )[0];
+
+  const presents_bag_metadata = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      metaplexID.toBuffer(),
+      partsMints.presentsBagMint.toBuffer(),
+    ],
+    metaplexID
+  )[0];
+
+  const landing_gear_metadata = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("metadata"),
+      metaplexID.toBuffer(),
+      partsMints.landingGearMint.toBuffer(),
+    ],
+    metaplexID
+  )[0];
+
   const ix = await BONKERS_PROGRAM.methods
     .initBonkers(gameSettings)
     .accounts({
@@ -509,15 +546,28 @@ async function init_bonkers_game(
       gameSettings: gameSettingsPDA,
       gameRollsStg1: rollSTG1PDA,
       gameRollsStg2: rollSTG2PDA,
+      mplProgram: metaplexID,
+      propulsionMint: partsMints.propulsionMint,
+      landingGearMint: partsMints.landingGearMint,
+      navigationMint: partsMints.navigationMint,
+      presentsBagMint: partsMints.presentsBagMint,
+      propulsionMetadata: propulsion_metadata,
+      landingGearMetadata: landing_gear_metadata,
+      navigationMetadata: navigation_metadata,
+      presentsBagMetadata: presents_bag_metadata,
+      rentAccount: anchor.web3.SYSVAR_RENT_PUBKEY,
     })
     .signers([ADMIN_KEY])
     .instruction();
 
+  const computeIX = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+    units: 1_000_000,
+  });
   const { blockhash } = await CONNECTION.getLatestBlockhash();
   const txMsg = new anchor.web3.TransactionMessage({
     payerKey: ADMIN_KEY.publicKey,
     recentBlockhash: blockhash,
-    instructions: [ix],
+    instructions: [computeIX, ix],
   }).compileToLegacyMessage();
   const tx = new anchor.web3.VersionedTransaction(txMsg);
   tx.sign([ADMIN_KEY]);
