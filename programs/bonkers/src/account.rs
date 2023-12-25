@@ -23,11 +23,13 @@ pub struct GameSettings {
     pub navigation_parts_mint: Pubkey, // The mint address for this resource instance for this game
     pub presents_bag_parts_mint: Pubkey, // The mint address for this resource instance for this game
     pub prize_pool: u64,
+    pub stg1_roll_multiplier: u64, // The max roll is this value * avg stake
+    pub stg1_sleigh_idx_boost: u64, // This sleigh stake is calculated as stake + (avg stake/boost)
 }
 
 impl MaxSize for GameSettings {
     fn get_max_size() -> usize {
-        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8;
+        return 8 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 8 + 8 + 8 + 8 + 32 + 32 + 32 + 32 + 8 + 8 + 8;
     }
 }
 

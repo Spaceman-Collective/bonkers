@@ -28,4 +28,7 @@ pub enum BonkersError {
 
     #[msg("")]
     SleighNotBuilt, // 6008
+
+    #[msg("")]
+    SleighNotBroken, // 6009
 }

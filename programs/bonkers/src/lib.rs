@@ -48,6 +48,8 @@ pub mod bonkers {
         ctx.accounts.game_settings.navigation_parts_mint = init.navigation_parts_mint;
         ctx.accounts.game_settings.presents_bag_parts_mint = init.presents_bag_parts_mint;
         ctx.accounts.game_settings.prize_pool = 0;
+        ctx.accounts.game_settings.stg1_roll_multiplier = init.stg1_roll_multiplier;
+        ctx.accounts.game_settings.stg1_sleigh_idx_boost = init.stg1_sleigh_idx_boost;
 
         let game_id_bytes = init.game_id.to_be_bytes();
         let game_setting_seeds: &[&[u8]] = &[
@@ -210,8 +212,10 @@ pub mod bonkers {
         if game_settings.sleighs_staked == 0 {
             random_number = 1;
         } else {
-            random_number =
-                get_random_u64(5 * game_settings.total_stake / game_settings.sleighs_staked);
+            random_number = get_random_u64(
+                (game_settings.stg1_roll_multiplier * game_settings.total_stake)
+                    / game_settings.sleighs_staked,
+            );
         }
 
         // Store to rolls
@@ -312,7 +316,14 @@ pub mod bonkers {
             .get(sleigh.last_claimed_roll as usize + 1)
             .unwrap();
 
-        if sleigh.stake_amt > *roll {
+        let avg_stake = game_settings.total_stake / game_settings.sleighs_staked;
+
+        // Sleigh roll is sleigh_stake + (sleigh.built_index*avg_stake/idx_boost)
+        // This boost is 0 for getting built, but then gives a nice boost for rolls after that to get levels
+        if (sleigh.stake_amt
+            + ((sleigh.built_index * avg_stake) / game_settings.stg1_sleigh_idx_boost))
+            > *roll
+        {
             // Either move to lvl 1 and mint
             // Or upgrade level
             if sleigh.level == 0 {
@@ -766,6 +777,91 @@ pub mod bonkers {
                 returned_coin,
                 game_settings.coin_decimals,
             )?;
+        }
+        sleigh.close(ctx.accounts.sleigh_owner.to_account_info())?;
+        game_settings.sleighs_retired += 1;
+        Ok(())
+    }
+
+    /**
+     * Admins can force retire a sleigh if it's broken, so players can't grief the prize pot
+     * Can ONLY do it if the sleigh is BROKEN
+     */
+    pub fn force_retire(ctx: Context<ForceRetire>) -> Result<()> {
+        let game_settings = &mut ctx.accounts.game_settings;
+        let slot = Clock::get().unwrap().slot;
+        let sleigh = &mut ctx.accounts.sleigh;
+
+        // Check Stage 1 has ended
+        if game_settings.stage1_end > slot {
+            return err!(BonkersError::Stage1NotOver);
+        }
+
+        let game_id = game_settings.game_id.to_be_bytes();
+        let game_setting_seeds: &[&[u8]] = &[
+            PREFIX_GAME_SETTINGS,
+            game_id.as_ref(),
+            &[ctx.bumps.game_settings],
+        ];
+        let signer_seeds = &[game_setting_seeds];
+
+        if sleigh.built_index == 0 {
+            // return full bonk
+            transfer_checked(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    TransferChecked {
+                        from: ctx.accounts.game_token_ata.to_account_info(),
+                        to: ctx.accounts.sleigh_owner_ata.to_account_info(),
+                        authority: game_settings.to_account_info(),
+                        mint: ctx.accounts.coin_mint.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                sleigh.stake_amt,
+                game_settings.coin_decimals,
+            )?;
+        } else if sleigh.broken {
+            // return 70%(stake-mintcost) + spoils + prize pool
+            let base_return = ((sleigh.stake_amt - sleigh.mint_cost) * 70) / 100_u64;
+            let spoils = (game_settings.sleighs_built - sleigh.built_index)
+                * game_settings.mint_cost_multiplier;
+            let mut prize_pool: u64 = 0;
+            if game_settings.sleighs_retired + 1 == game_settings.sleighs_built {
+                msg!(
+                    "Last sleigh in game! Awarding Prize Pool {:#}",
+                    game_settings.prize_pool
+                );
+                // if this is the last sleigh, then give it the prize pool
+                prize_pool = game_settings.prize_pool
+            } else {
+                // if not the last sleigh, add 20% of it's stake amount to prize pool
+                game_settings.prize_pool += ((sleigh.stake_amt - sleigh.mint_cost) * 20) / 100_u64
+            }
+
+            let returned_coin = base_return + spoils + prize_pool;
+            msg!(
+                "Returning {:#} base, {:#} spoils, and {:#} prize pool",
+                base_return,
+                spoils,
+                prize_pool
+            );
+            transfer_checked(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    TransferChecked {
+                        from: ctx.accounts.game_token_ata.to_account_info(),
+                        to: ctx.accounts.sleigh_owner_ata.to_account_info(),
+                        authority: game_settings.to_account_info(),
+                        mint: ctx.accounts.coin_mint.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                returned_coin,
+                game_settings.coin_decimals,
+            )?;
+        } else {
+            return err!(BonkersError::SleighNotBroken);
         }
         sleigh.close(ctx.accounts.sleigh_owner.to_account_info())?;
         game_settings.sleighs_retired += 1;

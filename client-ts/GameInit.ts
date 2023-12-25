@@ -455,6 +455,8 @@ async function init_bonkers_game(
     navigationPartsMint: partsMints.navigationMint,
     presentsBagPartsMint: partsMints.presentsBagMint,
     prizePool: new anchor.BN(0),
+    stg1RollMultiplier: new anchor.BN(6), // higher the number, the harder the roll is
+    stg1SleighIdxBoost: new anchor.BN(100), // lower the number, the higher the boost
   };
 
   console.log("Game Settings: ", JSON.stringify(gameSettings, null, 2));
