@@ -5,8 +5,8 @@ import { readFileSync } from "fs";
 import { serializeUint64, ByteifyEndianess } from "byteify";
 import dotenv from "dotenv";
 dotenv.config();
-import { Bonkers } from "../target/types/bonkers";
-const bonkersIDL = require("../target/idl/bonkers.json");
+import { Bonkers } from "../assets/bonkers";
+const bonkersIDL = require("../assets/bonkers.json");
 const BONKERS_KEY = new anchor.web3.PublicKey(
   "DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F"
 );

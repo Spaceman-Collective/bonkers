@@ -7,8 +7,8 @@ import { serializeUint64, ByteifyEndianess } from "byteify";
 import { encode, decode } from "bs58";
 import dotenv from "dotenv";
 dotenv.config();
-import { Bonkers } from "../target/types/bonkers";
-const bonkersIDL = require("../target/idl/bonkers.json");
+import { Bonkers } from "../assets/bonkers";
+const bonkersIDL = require("../assets/bonkers.json");
 const BONKERS_KEY = new anchor.web3.PublicKey(
   "DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F"
 );
@@ -132,13 +132,19 @@ async function main() {
               }).compileToLegacyMessage();
               const tx = new anchor.web3.VersionedTransaction(txMsg);
               tx.sign([ADMIN_KEY]);
-              const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
-                maxRetries: 3,
-              });
-              await CONNECTION.confirmTransaction(sig);
-              console.log(
-                `Cranked ${sleigh.account.sleighId.toString()} in Stage 1`
-              );
+              try {
+                const sig = await CONNECTION.sendRawTransaction(
+                  tx.serialize(),
+                  {
+                    maxRetries: 3,
+                  }
+                );
+                console.log(
+                  `Cranked ${sleigh.account.sleighId.toString()} in Stage 1`
+                );
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
         })
@@ -216,13 +222,16 @@ async function main() {
             }).compileToLegacyMessage();
             const tx = new anchor.web3.VersionedTransaction(txMsg);
             tx.sign([ADMIN_KEY]);
-            const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
-              maxRetries: 3,
-            });
-            await CONNECTION.confirmTransaction(sig);
-            console.log(
-              `Cranked ${sleigh.account.sleighId.toString()} in Stage 2`
-            );
+            try {
+              const sig = await CONNECTION.sendRawTransaction(tx.serialize(), {
+                maxRetries: 3,
+              });
+              console.log(
+                `Cranked ${sleigh.account.sleighId.toString()} in Stage 2`
+              );
+            } catch (e) {
+              console.error(e);
+            }
           } else {
             console.log("Something went wrong processing...");
           }

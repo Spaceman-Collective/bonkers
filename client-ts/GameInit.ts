@@ -435,8 +435,8 @@ async function init_bonkers_game(
 ) {
   const slot = await CONNECTION.getSlot();
   const SLOTS_PER_MINUTE = 120;
-  const INTERVAL_IN_MINUTES = 1;
-  const STAGE1_LEN_MIN = 10; // 12 hours
+  const INTERVAL_IN_MINUTES = 10;
+  const STAGE1_LEN_MIN = 1440; // 24 hours
 
   let gameSettings = {
     gameId: gameId,
