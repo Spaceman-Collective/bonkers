@@ -662,7 +662,7 @@ pub mod bonkers {
             ),
             navigation_repair_cost,
         )?;
-        sleigh.navigation_hp += landing_gear_repair;
+        sleigh.navigation_hp += navigation_repair;
 
         let presents_bag_dmg = u8::MAX - sleigh.presents_bag_hp;
         let mut presents_bag_repair = repair_presents_bag_hp;
@@ -766,10 +766,9 @@ pub mod bonkers {
                 returned_coin,
                 game_settings.coin_decimals,
             )?;
-            sleigh.close(ctx.accounts.sleigh_owner.to_account_info())?;
-            game_settings.sleighs_retired += 1;
         }
-
+        sleigh.close(ctx.accounts.sleigh_owner.to_account_info())?;
+        game_settings.sleighs_retired += 1;
         Ok(())
     }
 
