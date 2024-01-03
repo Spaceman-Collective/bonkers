@@ -1,20 +1,22 @@
-// In charge of cranking deliquent sleighs
-
-import * as anchor from "@coral-xyz/anchor";
-import { readFileSync } from "fs";
-import * as spl from "@solana/spl-token";
-import { serializeUint64, ByteifyEndianess } from "byteify";
-import { encode } from "bs58";
 import dotenv from "dotenv";
 dotenv.config();
+import * as anchor from "@coral-xyz/anchor";
+import { serializeUint64, ByteifyEndianess } from "byteify";
+import { readFileSync } from "fs";
+import * as spl from "@solana/spl-token";
+import { gql, GraphQLClient } from "graphql-request";
+import { encode } from "bs58";
+
+const CONNECTION = new anchor.web3.Connection(
+  process.env.RPC_DEVNET_SHYFT,
+  "confirmed"
+);
+
 import { Bonkers } from "../assets/bonkers";
 const bonkersIDL = require("../assets/bonkers.json");
+
 const BONKERS_KEY = new anchor.web3.PublicKey(
   "DYjXGPz5HGneqvA7jsgRVKTTaeoarCPNCH6pr9Lu2L3F"
-);
-const CONNECTION = new anchor.web3.Connection(
-  process.env.RPC_DEVNET,
-  "confirmed"
 );
 
 // 1. Load Admin Key
@@ -71,7 +73,54 @@ const gameSettingsPDA = anchor.web3.PublicKey.findProgramAddressSync(
   BONKERS_KEY
 )[0];
 
-main();
+const FETCH_NON_BROKEN_SLEIGHS = gql`
+  query getNonBrokenSleighs($gameId: numericc) {
+    Bonkers_Sleigh(
+      where: { gameId: { _eq: $gameId }, broken: { _eq: false } }
+    ) {
+      broken
+      builtIndex
+      gameId
+      landingGearHp
+      lastClaimedRoll
+      lastDeliveryRoll
+      level
+      mintCost
+      navigationHp
+      owner
+      presentsBagHp
+      propulsionHp
+      sleighId
+      stakeAmt
+      stakedAfterRoll
+      pubkey
+    }
+  }
+`;
+
+interface Sleigh {
+  broken: boolean;
+  builtIndex: number;
+  gameId: number;
+  landingGearHp: number;
+  lastClaimedRoll: number;
+  lastDeliveryRoll: number;
+  level: number;
+  mintCost: number;
+  navigationHp: number;
+  owner: string;
+  presentsBagHp: number;
+  propulsionHp: number;
+  sleighId: number;
+  stakeAmt: number;
+  stakedAfterRoll: number;
+  pubkey: string;
+}
+
+const gqlClient = new GraphQLClient(process.env.GQL_DEVNET);
+
+gqlMain();
+
 async function main() {
   let gameSettings = await BONKERS_PROGRAM.account.gameSettings.fetch(
     gameSettingsPDA
@@ -253,6 +302,13 @@ async function main() {
     currentSlot = await CONNECTION.getSlot();
     await timeout(gameSettings.rollInterval.toNumber());
   }
+}
+
+async function gqlMain() {
+  const sleighs = await gqlClient.request(FETCH_NON_BROKEN_SLEIGHS, {
+    gameId: process.env.GAME_ID!,
+  });
+  console.log(sleighs);
 }
 
 /**

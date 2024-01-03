@@ -37,14 +37,6 @@ const BONKERS_PROGRAM: anchor.Program<Bonkers> = new anchor.Program(
   { connection: CONNECTION }
 );
 
-/*
-mintSPLTo(
-  new anchor.web3.PublicKey("Gx1V34ivZZ1Fq7Rm9ZmogBdDgYZieYKjJU1icSupFuCT"),
-  new anchor.web3.PublicKey("BFTG9fGEdX8z2Hb8sTpuE2exAGZ154YMWXJt6LmqstDA"),
-  BigInt(10000000000000)
-);
-*/
-
 main();
 async function main() {
   const gameId = new anchor.BN(process.env.GAME_ID!);
@@ -351,78 +343,6 @@ async function uploadPartsTokensMetadataForGameID(gameId: anchor.BN) {
   return response;
 }
 
-/*
-async function mint_parts_tokens(gameId: anchor.BN): Promise<{
-  propulsionMint: anchor.web3.PublicKey;
-  landingGearMint: anchor.web3.PublicKey;
-  navigationMint: anchor.web3.PublicKey;
-  presentsBagMint: anchor.web3.PublicKey;
-}> {
-  let mintAuthorityPDA = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("settings"),
-      Uint8Array.from(
-        serializeUint64(BigInt(gameId.toString()), {
-          endianess: ByteifyEndianess.BIG_ENDIAN,
-        })
-      ),
-    ],
-    BONKERS_KEY
-  )[0];
-
-  let resources = ["propulsion", "presents_bag", "navigation", "landing_gear"];
-  let resourceMints: {
-    [resource: string]: string; //resouce => mint
-  } = {};
-  for (let resource of resources) {
-    console.log(`Minting Resource ${resource}`);
-    const response: any = await (
-      await fetch("https://api.shyft.to/sol/v1/token/create_from_metadata", {
-        method: "post",
-        headers: {
-          "x-api-key": process.env.SHYFT_KEY!,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          network: "devnet",
-          wallet_address: mintAuthorityPDA.toString(),
-          fee_payer: ADMIN_KEY.publicKey.toString(),
-          metadata_uri: `https://shdw-drive.genesysgo.net/HpE3jeKxwbkH23Vy7F4q37ta2FrjJw5WnpRgKgDyBK6m/${resource}-${gameId.toString()}.json`,
-          decimals: 0,
-        }),
-        redirect: "follow",
-      })
-    ).json();
-
-    if (!response.success) {
-      console.error("Trouble minting resource: ", resource);
-      console.error(response);
-    } else {
-      const tx = anchor.web3.Transaction.from(
-        Buffer.from(response.result.encoded_transaction, "base64")
-      );
-      console.log(
-        Buffer.from(tx.serialize({ verifySignatures: false })).toString(
-          "base64"
-        )
-      );
-      tx.partialSign(ADMIN_KEY);
-      console.log(Buffer.from(tx.serialize()).toString("base64"));
-      const sig = await CONNECTION.sendRawTransaction(tx.serialize());
-      console.log(`${resource} Mint tx: ${sig}`);
-      resourceMints[resource] = response.result.mint;
-    }
-  }
-  console.log("Resource Mints: ", resourceMints);
-  return {
-    propulsionMint: new anchor.web3.PublicKey(resourceMints["propulsion"]),
-    landingGearMint: new anchor.web3.PublicKey(resourceMints["landing_gear"]),
-    navigationMint: new anchor.web3.PublicKey(resourceMints["navigation"]),
-    presentsBagMint: new anchor.web3.PublicKey(resourceMints["presents_bag"]),
-  };
-}
-*/
-
 async function init_bonkers_game(
   gameId: anchor.BN,
   coinMint: anchor.web3.PublicKey,
@@ -455,7 +375,7 @@ async function init_bonkers_game(
     navigationPartsMint: partsMints.navigationMint,
     presentsBagPartsMint: partsMints.presentsBagMint,
     prizePool: new anchor.BN(0),
-    stg1RollMultiplier: new anchor.BN(6), // higher the number, the harder the roll is
+    stg1RollMultiplier: new anchor.BN(4), // higher the number, the harder the roll is
     stg1SleighIdxBoost: new anchor.BN(100), // lower the number, the higher the boost
   };
 

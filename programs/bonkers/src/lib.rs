@@ -212,6 +212,12 @@ pub mod bonkers {
         if game_settings.sleighs_staked == 0 {
             random_number = 1;
         } else {
+            /*
+            random_number = get_random_u64(
+                (game_settings.stg1_roll_multiplier * game_settings.total_stake)
+                    / game_settings.sleighs_staked,
+            );
+            */
             random_number = get_random_u64(
                 (game_settings.stg1_roll_multiplier * game_settings.total_stake)
                     / game_settings.sleighs_staked,
@@ -341,8 +347,11 @@ pub mod bonkers {
                     game_settings.sleighs_built += 1;
                 }
             } else {
-                // If it's already level 256 (unlikely) then it can't go any higher
+                // Can't go higher than level 10
                 sleigh.level = sleigh.level.checked_add(1).unwrap_or(sleigh.level);
+                if sleigh.level > 10 {
+                    sleigh.level = 10;
+                }
             }
         }
 
@@ -518,8 +527,17 @@ pub mod bonkers {
         // Mint Resources
         // Figure out which of the four resources they get this roll
         let resource_selected = roll % 4; // will give 0,1,2,3 as a result
-        let resource_collection_amount = BASE_RESOURCE_DRIP
-            * ((sleigh.level as u64 * BASE_RESOURCE_DRIP) / (2_u64.pow(sleigh.level as u32)));
+        let mut resource_collection_amount = BASE_RESOURCE_DRIP;
+        let max_range;
+        if sleigh.level > 10 {
+            max_range = 10;
+        } else {
+            max_range = sleigh.level;
+        }
+        for i in 0..max_range {
+            resource_collection_amount +=
+                BASE_RESOURCE_DRIP * ((i as u64 * BASE_RESOURCE_DRIP) / (2_u64.pow(i as u32)));
+        }
 
         let game_id = game_settings.game_id.to_be_bytes();
 
@@ -623,7 +641,7 @@ pub mod bonkers {
         if propulsion_repair > propulsion_dmg {
             propulsion_repair = propulsion_dmg;
         }
-        let propulsion_repair_cost = propulsion_repair as u64 * sleigh.last_delivery_roll * 2;
+        let propulsion_repair_cost = propulsion_repair as u64 * (sleigh.last_delivery_roll + 1) * 2;
         burn(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -642,7 +660,8 @@ pub mod bonkers {
         if landing_gear_repair > landing_gear_dmg {
             landing_gear_repair = landing_gear_dmg;
         }
-        let landing_gear_repair_cost = landing_gear_repair as u64 * sleigh.last_delivery_roll * 2;
+        let landing_gear_repair_cost =
+            landing_gear_repair as u64 * (sleigh.last_delivery_roll + 1) * 2;
         burn(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -661,7 +680,7 @@ pub mod bonkers {
         if navigation_repair > navigation_dmg {
             navigation_repair = navigation_dmg;
         }
-        let navigation_repair_cost = navigation_repair as u64 * sleigh.last_delivery_roll * 2;
+        let navigation_repair_cost = navigation_repair as u64 * (sleigh.last_delivery_roll + 1) * 2;
         burn(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -680,7 +699,8 @@ pub mod bonkers {
         if presents_bag_repair > presents_bag_dmg {
             presents_bag_repair = presents_bag_dmg;
         }
-        let presents_bag_repair_cost = presents_bag_repair as u64 * sleigh.last_delivery_roll * 2;
+        let presents_bag_repair_cost =
+            presents_bag_repair as u64 * (sleigh.last_delivery_roll + 1) * 2;
         burn(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),

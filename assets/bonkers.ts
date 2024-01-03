@@ -443,6 +443,60 @@ export type Bonkers = {
       "args": []
     },
     {
+      "name": "forceRetire",
+      "docs": [
+        "* Admins can force retire a sleigh if it's broken, so players can't grief the prize pot\n     * Can ONLY do it if the sleigh is BROKEN"
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "sleighOwner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sleigh",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameSettings",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sleighOwnerAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "coinMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "elvishCoffee",
       "docs": [
         "* Admin can only withdraw from the wallet when the game is OVER"
@@ -564,6 +618,14 @@ export type Bonkers = {
           },
           {
             "name": "prizePool",
+            "type": "u64"
+          },
+          {
+            "name": "stg1RollMultiplier",
+            "type": "u64"
+          },
+          {
+            "name": "stg1SleighIdxBoost",
             "type": "u64"
           }
         ]
@@ -696,6 +758,11 @@ export type Bonkers = {
     {
       "code": 6008,
       "name": "SleighNotBuilt",
+      "msg": ""
+    },
+    {
+      "code": 6009,
+      "name": "SleighNotBroken",
       "msg": ""
     }
   ]
@@ -1146,6 +1213,60 @@ export const IDL: Bonkers = {
       "args": []
     },
     {
+      "name": "forceRetire",
+      "docs": [
+        "* Admins can force retire a sleigh if it's broken, so players can't grief the prize pot\n     * Can ONLY do it if the sleigh is BROKEN"
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "sleighOwner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sleigh",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameSettings",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "gameTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sleighOwnerAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "coinMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "elvishCoffee",
       "docs": [
         "* Admin can only withdraw from the wallet when the game is OVER"
@@ -1267,6 +1388,14 @@ export const IDL: Bonkers = {
           },
           {
             "name": "prizePool",
+            "type": "u64"
+          },
+          {
+            "name": "stg1RollMultiplier",
+            "type": "u64"
+          },
+          {
+            "name": "stg1SleighIdxBoost",
             "type": "u64"
           }
         ]
@@ -1399,6 +1528,11 @@ export const IDL: Bonkers = {
     {
       "code": 6008,
       "name": "SleighNotBuilt",
+      "msg": ""
+    },
+    {
+      "code": 6009,
+      "name": "SleighNotBroken",
       "msg": ""
     }
   ]
